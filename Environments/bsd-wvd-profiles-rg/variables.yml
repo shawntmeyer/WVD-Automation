@@ -23,7 +23,7 @@ variables:
   
 #region specific
   rgFolderPath: '$(orchestrationPath)/bsd-wvd-profiles-rg'
-  location: eastus
+  location: <Location>
 #endregion
 
 #######################

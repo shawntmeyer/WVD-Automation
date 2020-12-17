@@ -44,7 +44,7 @@
           "ipConfigurations": [
             {
               "name": "ipconfig1",
-              "subnetId": "/subscriptions/<subscriptionid>/resourceGroups/BSD-NETWORKS-EUS-RG/providers/Microsoft.Network/virtualNetworks/bsd-wvd-eus-vnet/subnets/wvd-prod-hp-sn"
+              "subnetId": "/subscriptions/<subscriptionid>/resourceGroups/BSD-NETWORKS-RG/providers/Microsoft.Network/virtualNetworks/bsd-wvd-vnet/subnets/wvd-prod-hp-sn"
             }
           ]
         }

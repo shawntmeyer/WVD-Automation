@@ -43,7 +43,7 @@ variables:
   value: '$(orchestrationPath)/bsd-wvd-mgmt-rg'
 
 - name: location
-  value: eastus
+  value: <Location>
 #endregion
 
 #######################

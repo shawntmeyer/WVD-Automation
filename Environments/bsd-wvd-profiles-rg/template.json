@@ -7,11 +7,11 @@
             "type": "String"
         },
         "virtualNetworks_bsd_hub_eus_vnet_externalid": {
-            "defaultValue": "/subscriptions/<subscriptionid>/resourceGroups/bsd-networks-eus-rg/providers/Microsoft.Network/virtualNetworks/bsd-hub-eus-vnet",
+            "defaultValue": "/subscriptions/<subscriptionid>/resourceGroups/bsd-networks-rg/providers/Microsoft.Network/virtualNetworks/bsd-hub-vnet",
             "type": "String"
         },
         "virtualNetworks_bsd_wvd_eus_vnet_externalid": {
-            "defaultValue": "/subscriptions/<subscriptionid>/resourceGroups/bsd-networks-eus-rg/providers/Microsoft.Network/virtualNetworks/bsd-wvd-eus-vnet",
+            "defaultValue": "/subscriptions/<subscriptionid>/resourceGroups/bsd-networks-rg/providers/Microsoft.Network/virtualNetworks/bsd-wvd-vnet",
             "type": "String"
         }
     },
@@ -21,7 +21,7 @@
             "type": "Microsoft.Storage/storageAccounts",
             "apiVersion": "2020-08-01-preview",
             "name": "[parameters('storageAccounts_wvdhxgneus_name')]",
-            "location": "eastus",
+            "location": "<Location>",
             "sku": {
                 "name": "Premium_LRS",
                 "tier": "Premium"

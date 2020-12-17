@@ -18,7 +18,7 @@
             "value": 127
         },
         "subnetId": {
-            "value": "/subscriptions/<subscriptionid>/resourceGroups/bsd-networks-eus-rg/providers/Microsoft.Network/virtualNetworks/bsd-wvd-eus-vnet/subnets/imaging-sn"
+            "value": "/subscriptions/<subscriptionid>/resourceGroups/bsd-networks-rg/providers/Microsoft.Network/virtualNetworks/bsd-wvd-vnet/subnets/imaging-sn"
         },
         "imageSource": {
             "value": {
@@ -114,7 +114,7 @@
         },
         "imageReplicationRegions": {
             "value": [
-                "EastUS"
+                "<Location>"
             ]
         }
     }

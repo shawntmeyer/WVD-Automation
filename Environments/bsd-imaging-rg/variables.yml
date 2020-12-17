@@ -14,7 +14,7 @@ variables:
 #############
 #region general
   rgFolderPath: '$(orchestrationPath)/bsd-imaging-rg'
-  location: EastUS
+  location: <Location>
   orchestrationPath: 'Environments'
   orchestrationFunctionsPath: 'OrchestrationSources/SharedDeploymentFunctions'
   wvdUploadsPath: '$(rgFolderPath)/Uploads'
