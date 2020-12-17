@@ -21,7 +21,7 @@ param(
     [string] $BuildDir = "c:\BuildArtifacts"
 )
 #region variables
-$domainsuffix = 'core.tbl.com'
+$domainsuffix = '<onpremdomain>'
 $zipfiles = "000-LGPO.zip", "001-RemoveApps.zip", "003-RSAT.zip",`
 "010-VSC++Redistributables.zip", "012-Powershell.zip","013-VSCode.zip","014-AzureStorageExplorer.zip",`
 "030-FSLogix.zip","050-OneDrive.zip","070-Edge.zip", "900-WindowsConfig.zip"

@@ -83,7 +83,7 @@ variables:
 ## ResourceGroup
   resourceGroupName: 'bsd-wvd-admin-hp-rg'
   WorkspaceName: 'CustomerNameWVDWorkspace'
-  WorkspaceResourceGroupName: 'bsd-wvd-mgmt-eus-rg'
+  WorkspaceResourceGroupName: 'bsd-wvd-mgmt-rg'
   
 # Host Pool related
 # -----------------

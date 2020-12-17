@@ -22,14 +22,11 @@ param(
 )
 #region variables
 $environment = 'Dev'
-$domainsuffix = 'core.tbl.com'
+$domainsuffix = '<onpremdomain>'
 $zipfiles = "000-LGPO.zip", "001-RemoveApps.zip","010-VSC++Redistributables.zip", `
     "011-SQLNativeClient.zip", "015-ReportBuilder.zip","016-PowerBIDesktop.zip",`
     "030-FSLogix.zip", "040-Office365.zip","050-OneDrive.zip","060-Teams.zip", "070-Edge.zip",`
-    "502-HXGN-ILM-17.0.zip", "503-HXGN-ILA-19.1.zip","511-HXGN-ICAD_NET-9.4.50158.zip", `
-    "515-HXGN-CADDBM-9.4.50158.zip","520-HXGN-iDispatcher-9.4.50163.zip",`
-    "530-HXGN-BWIInformerClient-9.4.01285.zip","535-HXGN-InformerClient-9.4.50075.zip", `
-    "540-HXGN-MobilePublicSafety-9.4.50206.zip","900-WindowsConfig.zip"
+    "900-WindowsConfig.zip"
 #endregion
 
 #region Initialization

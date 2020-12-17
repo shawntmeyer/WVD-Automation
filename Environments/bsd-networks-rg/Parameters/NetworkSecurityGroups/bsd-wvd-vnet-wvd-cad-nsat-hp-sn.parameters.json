@@ -3,7 +3,7 @@
 	"contentVersion": "1.0.0.0",
 	"parameters": {
 		"networkSecurityGroupName": {
-			"value": "bsd-wvd-eus-vnet-wvd-cad-prod-hp-sn-nsg"
+			"value": "bsd-wvd-eus-vnet-wvd-prod-hp-sn-nsg"
 		},
 		"networkSecurityGroupSecurityRules": {
 			"value": [

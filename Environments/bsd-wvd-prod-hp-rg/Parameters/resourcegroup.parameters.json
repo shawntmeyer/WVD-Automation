@@ -3,7 +3,7 @@
 	"contentVersion": "1.0.0.0",
 	"parameters": {
 		"resourceGroupName": {
-			"value": "bsd-wvd-cad-prod-hp-rg"
+			"value": "bsd-wvd-prod-hp-rg"
 		}
 	}
 }

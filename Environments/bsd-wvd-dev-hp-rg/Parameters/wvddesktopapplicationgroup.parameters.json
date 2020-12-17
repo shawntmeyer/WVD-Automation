@@ -3,27 +3,27 @@
     "contentVersion": "1.0.0.0",
     "parameters": {
         "appGroupName": {
-            "value": "bsd-wvd-cad-prod-dag"
+            "value": "bsd-wvd-dev-dag"
         },
         "appGroupType": {
             "value": "Desktop"
         },
         "hostpoolName": {
-            "value": "bsd-wvd-cad-prod-hp"
+            "value": "bsd-wvd-dev-hp"
         },
         "appGroupFriendlyName": {
-            "value": "Prod CAD Desktop"
+            "value": "Developer Desktop"
         },
         "appGroupDescription": {
-            "value": "Prod Full CAD Desktop"
+            "value": "HxGN Developer Desktop"
         },
         "roleAssignments": {
             "value": [
                 {
                     "roleDefinitionIdOrName": "Desktop Virtualization User",
                     "principalIds": [
-                        "d3eec286-2343-497f-85ac-6670623ba8ff", // WVD - CAD - Dispatchers - MD
-                        "4123815e-994d-4884-a449-70bd1b494681" // WVD - CAD - Supervisors - MD
+                        "84e0314d-b8d2-4c15-aed0-7d632a7dd3a5", // WVD - Prod - Devs
+                        "c3544243-05eb-48a6-8790-92d608dc9166" // WVD - Admins
                     ]
                 }
             ]

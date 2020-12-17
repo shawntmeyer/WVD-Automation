@@ -42,7 +42,7 @@
                 { 
                     "type": "PowerShell",
                     "name":   "InvokeCustomizations",  
-                    "scriptUri": "https://bsdimageassetsstore.blob.core.windows.net/imagesources/CAD_ImageCustomization.ps1",
+                    "scriptUri": "https://bsdimageassetsstore.blob.core.windows.net/imagesources/Prod_ImageCustomization.ps1",
                     "runElevated": true
                 },
                 {

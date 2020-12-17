@@ -574,8 +574,7 @@ stages:
                   azurePowerShellVersion: LatestVersion
                 enabled: true
 
-  ## CAD (Hexagon Software) Image template
-  - deployment: Create_New_CAD_ImageVersion
+  - deployment: Create_New_Prod_ImageVersion
     dependsOn:
     - ${{ if eq(variables['enableJobDeployResourceGroup'], true) }}:
       - Deploy_Imaging_ResourceGroup
@@ -589,7 +588,7 @@ stages:
     condition: |
       and (
         not(canceled()),
-        eq(variables['enableJobStartNewCADImageBuild'], true),
+        eq(variables['enableJobStartNewProdImageBuild'], true),
         in(dependencies.Deploy_Imaging_ResourceGroup.result, '', 'Succeeded', 'Skipped'),
         in(dependencies.Deploy_SharedImageDefinitions.result, '', 'Succeeded', 'Skipped'),
         in(dependencies.Deploy_UserAssignedIdentity_RoleAssignments.result, '', 'Succeeded', 'Skipped'),
@@ -611,8 +610,8 @@ stages:
                   moduleName: '$(imageTemplateModuleName)'
                   moduleVersion: '$(imageTemplateModuleVersion)'
               - task: AzurePowerShell@4
-                displayName: 'Trigger [CAD Image Template] pre-deployment tasks'
-                name: Deploy_CADImagePreDeployment_Task
+                displayName: 'Trigger [Prod Image Template] pre-deployment tasks'
+                name: Deploy_ProdImagePreDeployment_Task
                 inputs:
                   azureSubscription: $(serviceConnection)
                   ScriptType: InlineScript
@@ -627,7 +626,7 @@ stages:
                     $StorageAccountName = '$(wvdImageAssetsStorageAccount)'
                     $resourcegroupName = '$(resourcegroupname)'
                     $targetContainer = '$(targetContainer)'
-                    $parameterFilePath = '$(rgFolderPath)/Parameters/CAD_ImageTemplate.parameters.json'
+                    $parameterFilePath = '$(rgFolderPath)/Parameters/Prod_ImageTemplate.parameters.json'
                       $filename = split-path $parameterFilePath -leaf
                       $filename = $filename -ireplace "template.parameters.json","Customization.ps1"
                     $ImageCustomizationScript = Join-Path "$wvdUploadsPath" "WVDScripts\$filename"
@@ -659,8 +658,8 @@ stages:
                   azurePowerShellVersion: LatestVersion
                 enabled: true
               - task: AzurePowerShell@4
-                displayName: 'Deploy [CAD Image Template] to [$(resourcegroupname)] via [$(serviceConnection)]'
-                name: Deploy_CADImageTemplate_Task
+                displayName: 'Deploy [Prod Image Template] to [$(resourcegroupname)] via [$(serviceConnection)]'
+                name: Deploy_ProdImageTemplate_Task
                 inputs:
                   azureSubscription: $(serviceConnection)
                   ScriptType: InlineScript
@@ -669,7 +668,7 @@ stages:
                     . '$(Build.SourcesDirectory)/$(orchestrationFunctionsPath)/GeneralDeployment/Invoke-GeneralDeployment.ps1'
                     . '$(Build.SourcesDirectory)/$(orchestrationFunctionsPath)/GeneralDeployment/Add-CustomParameters.ps1'
 
-                    $parameterFilePath = '$(rgFolderPath)/Parameters/CAD_ImageTemplate.parameters.json'
+                    $parameterFilePath = '$(rgFolderPath)/Parameters/Prod_ImageTemplate.parameters.json'
 
                     $functionInput = @{
                       location                  = '$(location)'
@@ -687,8 +686,8 @@ stages:
                 enabled: true
               ## Trigger building new image
               - task: AzurePowerShell@4
-                displayName: "Trigger [CAD Image Template] post-deployment"
-                name: PostDeploy_CADImageTemplate_Task
+                displayName: "Trigger [Prod Image Template] post-deployment"
+                name: PostDeploy_ProdImageTemplate_Task
                 inputs:
                   azureSubscription: $(serviceConnection)
                   ScriptType: InlineScript
@@ -699,7 +698,7 @@ stages:
                     $functionInput = @{
                       orchestrationFunctionsPath     = '$(Build.SourcesDirectory)/$(orchestrationFunctionsPath)'   
                       ResourceGroupName              = '$(resourcegroupname)'
-                      ImageTemplateName              = '$(Deploy_CADImageTemplate_Task.imageTemplateName)' # template deployment output
+                      ImageTemplateName              = '$(Deploy_ProdImageTemplate_Task.imageTemplateName)' # template deployment output
                       synchronouslyWaitForImageBuild = [System.Convert]::ToBoolean('$(synchronouslyWaitForImageBuild)')
                     }
 

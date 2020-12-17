@@ -40,7 +40,7 @@ variables:
 
 #region specific
 - name: rgFolderPath
-  value: '$(orchestrationPath)/bsd-wvd-mgmt-eus-rg'
+  value: '$(orchestrationPath)/bsd-wvd-mgmt-rg'
 
 - name: location
   value: eastus
@@ -54,7 +54,7 @@ variables:
 # Pipeline Name
 # -------------
 - name: pipelineName
-  value: 'bsd-wvd-mgmt-eus-rg Deployment'
+  value: 'bsd-wvd-mgmt-rg Deployment'
 
 # Deployed Module Specs
 # ---------------------
@@ -114,7 +114,7 @@ variables:
 # ResourceGroup related
 # ---------------------
 - name: resourcegroupname
-  value: 'bsd-wvd-mgmt-eus-rg'
+  value: 'bsd-wvd-mgmt-rg'
 
 # Key Vault related
 #------------------
@@ -163,5 +163,5 @@ variables:
 # Recovery Services Vault related
 # -------------------------------
 - name: profilesBackupVault
-  value: 'bsd-profiles-eus-rsv'
+  value: 'bsd-profiles-rsv'
 #endregion

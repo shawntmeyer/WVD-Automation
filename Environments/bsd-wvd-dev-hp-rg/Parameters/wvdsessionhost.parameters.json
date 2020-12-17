@@ -29,13 +29,13 @@
     "adminPassword": {
       "reference": {
         "keyVault": {
-          "id": "/subscriptions/65862f1e-947f-4dd6-bd50-319d3c84eb36/resourceGroups/bsd-wvd-mgmt-eus-rg/providers/Microsoft.KeyVault/vaults/bsd-wvd-mgmt-kv"
+          "id": "/subscriptions/65862f1e-947f-4dd6-bd50-319d3c84eb36/resourceGroups/bsd-wvd-mgmt-rg/providers/Microsoft.KeyVault/vaults/bsd-wvd-mgmt-kv"
         },
         "secretName": "localAdmin-Password"
       }
     },
     "availabilitySetName": {
-      "value": "bsd-wvd-cad-dev-as"
+      "value": "bsd-wvd-dev-as"
     },
     "nicConfigurations": {
       "value": [
@@ -44,22 +44,22 @@
           "ipConfigurations": [
             {
               "name": "ipconfig1",
-              "subnetId": "/subscriptions/65862f1e-947f-4dd6-bd50-319d3c84eb36/resourceGroups/BSD-NETWORKS-EUS-RG/providers/Microsoft.Network/virtualNetworks/bsd-wvd-eus-vnet/subnets/wvd-cad-dev-hp-sn"
+              "subnetId": "/subscriptions/65862f1e-947f-4dd6-bd50-319d3c84eb36/resourceGroups/BSD-NETWORKS-EUS-RG/providers/Microsoft.Network/virtualNetworks/bsd-wvd-eus-vnet/subnets/wvd-dev-hp-sn"
             }
           ]
         }
       ]
     },
     "domainName": {
-      "value": "core.tbl.com"
+      "value": "<onpremdomain>"
     },
     "domainJoinUser": {
-      "value": "wvdjoin@core.tbl.com"
+      "value": "wvdjoin@<onpremdomain>"
     },
     "domainJoinPassword": {
       "reference": {
         "keyVault": {
-          "id": "/subscriptions/65862f1e-947f-4dd6-bd50-319d3c84eb36/resourceGroups/bsd-wvd-mgmt-eus-rg/providers/Microsoft.KeyVault/vaults/bsd-wvd-mgmt-kv"
+          "id": "/subscriptions/65862f1e-947f-4dd6-bd50-319d3c84eb36/resourceGroups/bsd-wvd-mgmt-rg/providers/Microsoft.KeyVault/vaults/bsd-wvd-mgmt-kv"
         },
         "secretName": "WVDJoin-Password"
       }
@@ -85,7 +85,7 @@
             "function": "AddSessionHost"
           },
           "configurationArguments": {
-            "hostPoolName": "bsd-wvd-cad-dev-hp"
+            "hostPoolName": "bsd-wvd-dev-hp"
           }
         },
         "protectedSettings": {

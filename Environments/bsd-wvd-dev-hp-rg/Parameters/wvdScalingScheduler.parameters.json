@@ -3,20 +3,20 @@
     "contentVersion": "1.0.0.0",
     "parameters": {
         "LogicAppName": {
-            "value": "AutoScale-bsd-wvd-cad-dev-hp"
+            "value": "AutoScale-bsd-wvd-dev-hp"
         },
         "webhookURI": {
             "reference": {
                 "keyVault": {
-                    "id": "/subscriptions/65862f1e-947f-4dd6-bd50-319d3c84eb36/resourceGroups/bsd-wvd-mgmt-eus-rg/providers/Microsoft.KeyVault/vaults/bsd-wvd-mgmt-kv"
+                    "id": "/subscriptions/65862f1e-947f-4dd6-bd50-319d3c84eb36/resourceGroups/bsd-wvd-mgmt-rg/providers/Microsoft.KeyVault/vaults/bsd-wvd-mgmt-kv"
                 },
                 "secretName": "WVDScalingWebhook-Uri"
             }
         },
         "actionSettingsBody": {
             "value": {
-                "ResourceGroupName": "bsd-wvd-cad-dev-hp-rg",
-                "HostPoolName": "bsd-wvd-cad-dev-hp",
+                "ResourceGroupName": "bsd-wvd-dev-hp-rg",
+                "HostPoolName": "bsd-wvd-dev-hp",
                 "MaintenanceTagName": "MaintenanceMode",
                 "UtcOffset": "-5:00",
                 "BeginPeakTime": "6:00",

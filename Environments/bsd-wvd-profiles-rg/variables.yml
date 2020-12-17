@@ -22,7 +22,7 @@ variables:
   packagePath: ModulePackages
   
 #region specific
-  rgFolderPath: '$(orchestrationPath)/bsd-wvd-profiles-eus-rg'
+  rgFolderPath: '$(orchestrationPath)/bsd-wvd-profiles-rg'
   location: eastus
 #endregion
 
@@ -47,7 +47,7 @@ variables:
 # ----
   enableJobDeployResourceGroup: true # To enable/disable job
   enableJobDeployAdminProfilesStorageAccount: true # To enable/disable job
-  enableJobDeployCADProfilesStorageAccount: true # To enable/disable job
+  enableJobDeployProdProfilesStorageAccount: true # To enable/disable job
   enableJobDeployDevProfilesStorageAccount: true # To enable/disable job
 
 ######################
@@ -57,7 +57,7 @@ variables:
 
 # ResourceGroup related
 # ---------------------
-  resourcegroupname: 'bsd-wvd-profiles-eus-rg'
+  resourcegroupname: 'bsd-wvd-profiles-rg'
 
 # FSLogix related - IdentityApproach (AD or AADDS)
 # ------------------------------------------------

@@ -21,7 +21,7 @@
             "value": "Windows10"
         },
         "sku": {
-            "value": "CAD"
+            "value": "Prod"
         },
         "minRecommendedvCPUs": {
             "value": 2
@@ -39,7 +39,7 @@
             "value": "V1"
         },
         "imageDefinitionDescription": {
-            "value": "This image contains the software required by the Dispatchers, Supervisors, and Admins for the CAD system."
+            "value": "This image contains the software required by the Dispatchers, Supervisors, and Admins for the Prod system."
         },
         "eula": {
             "value": ""

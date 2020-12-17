@@ -3,7 +3,7 @@
 	"contentVersion": "1.0.0.0",
 	"parameters": {
 		"resourceGroupName": {
-			"value": "bsd-wvd-profiles-eus-rg"
+			"value": "bsd-wvd-dev-hp-rg"
 		}
 	}
 }

@@ -386,7 +386,7 @@ Write-Log -message "Starting Windows Configuration"
 #region Start Menu
 $OfficeDir = "$env:ProgramFiles\Microsoft Office"
 If (Test-Path -Path $OfficeDir) {
-    $LayoutFile = "$PSScriptRoot\StartMenu\StartLayoutCAD.xml"
+    $LayoutFile = "$PSScriptRoot\StartMenu\StartLayoutProd.xml"
 }
 Else {
     $LayoutFile = "$PSScriptRoot\StartMenu\StartLayoutAdmin.xml"

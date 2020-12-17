@@ -3,10 +3,10 @@
     "contentVersion": "1.0.0.0",
     "parameters": {
         "hostpoolName": {
-            "value": "bsd-wvd-cad-prod-hp"
+            "value": "bsd-wvd-dev-hp"
         },
         "hostpoolFriendlyName": {
-            "value": "prod WVD CAD Hostpool"
+            "value": "prod WVD Dev Hostpool"
         },
         "hostpoolDescription": {
             "value": ""

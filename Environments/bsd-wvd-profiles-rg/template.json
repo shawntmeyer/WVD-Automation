@@ -31,9 +31,9 @@
                 "azureFilesIdentityBasedAuthentication": {
                     "directoryServiceOptions": "AD",
                     "activeDirectoryProperties": {
-                        "domainName": "core.tbl.com",
-                        "netBiosDomainName": "core.tbl.com",
-                        "forestName": "core.tbl.com",
+                        "domainName": "<onpremdomain>",
+                        "netBiosDomainName": "<onpremdomain>",
+                        "forestName": "<onpremdomain>",
                         "domainGuid": "0d87b4ba-69ce-4e2e-8055-8c9ad8e105db",
                         "domainSid": "S-1-5-21-825380463-220883744-4055404330",
                         "azureStorageSid": "S-1-5-21-825380463-220883744-4055404330-4720"

@@ -24,7 +24,7 @@ variables:
 #endregion
 
 #region specific
-  rgFolderPath: '$(orchestrationPath)/bsd-wvd-cad-prod-hp-rg'
+  rgFolderPath: '$(orchestrationPath)/bsd-wvd-prod-hp-rg'
   location: eastus
 #endregion
 
@@ -35,7 +35,7 @@ variables:
 
 # Pipeline Name
 # -------------
-  pipelineName: 'WVD Central CAD Hostpool Deployment'
+  pipelineName: 'WVD Central Prod Hostpool Deployment'
 
 # Deployed Module Specs
 # ---------------------
@@ -81,13 +81,13 @@ variables:
 #region script variables
 
 ## ResourceGroup
-  resourceGroupName: 'bsd-wvd-cad-prod-hp-rg'
+  resourceGroupName: 'bsd-wvd-prod-hp-rg'
   WorkspaceName: 'CustomerNameWVDWorkspace'
-  WorkspaceResourceGroupName: 'bsd-wvd-mgmt-eus-rg'
+  WorkspaceResourceGroupName: 'bsd-wvd-mgmt-rg'
   
 # Host Pool related
 # -----------------
-  HostPoolName: 'bsd-wvd-cad-prod-hp'
+  HostPoolName: 'bsd-wvd-prod-hp'
 
 # Storage Account related
 # -----------------------

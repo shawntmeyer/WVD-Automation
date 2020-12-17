@@ -58,7 +58,7 @@ stages:
                 enabled: true
 
   ## Storage Account 1
-  - deployment: Deploy_WVDCADProfilesStorageAccount
+  - deployment: Deploy_WVDProdProfilesStorageAccount
     dependsOn:
     - ${{ if eq(variables['enableJobDeployResourceGroup'], true) }}:
       - Deploy_ProfilesResourceGroup
@@ -66,7 +66,7 @@ stages:
     condition: |
       and (
         not(canceled()),
-        eq(variables['enableJobDeployCADProfilesStorageAccount'], true),
+        eq(variables['enableJobDeployProdProfilesStorageAccount'], true),
         in(dependencies.Deploy_ProfilesResourceGroup.result, '', 'Succeeded', 'Skipped')
       )
     timeoutInMinutes: 120
@@ -94,7 +94,7 @@ stages:
                     Write-Verbose "Load function" -Verbose
                     . '$(Build.SourcesDirectory)/$(orchestrationFunctionsPath)/GeneralDeployment/Invoke-GeneralDeployment.ps1'
 
-                    $parameterFilePath = Join-Path '$(Build.SourcesDirectory)' '$(rgFolderPath)/Parameters/CADProfiles-storageaccount.parameters.json'
+                    $parameterFilePath = Join-Path '$(Build.SourcesDirectory)' '$(rgFolderPath)/Parameters/ProdProfiles-storageaccount.parameters.json'
                     $functionInput = @{
                       resourcegroupName = '$(resourcegroupname)'
                       modulePackagePath = Join-Path '$(Build.SourcesDirectory)/$(packagePath)' '$(storageAccountModuleName)'

@@ -3,7 +3,7 @@
   "contentVersion": "1.0.0.0",
   "parameters": {
     "vmNamePrefix": {
-      "value": "WVD-CAD-MD-"
+      "value": "WVD-Prod-MD-"
     },
     "vmNumberOfInstances": {
       "value": 6
@@ -29,13 +29,13 @@
     "adminPassword": {
       "reference": {
         "keyVault": {
-          "id": "/subscriptions/65862f1e-947f-4dd6-bd50-319d3c84eb36/resourceGroups/bsd-wvd-mgmt-eus-rg/providers/Microsoft.KeyVault/vaults/bsd-wvd-mgmt-kv"
+          "id": "/subscriptions/65862f1e-947f-4dd6-bd50-319d3c84eb36/resourceGroups/bsd-wvd-mgmt-rg/providers/Microsoft.KeyVault/vaults/bsd-wvd-mgmt-kv"
         },
         "secretName": "localAdmin-Password"
       }
     },
     "availabilitySetName": {
-      "value": "bsd-wvd-cad-prod-as"
+      "value": "bsd-wvd-prod-as"
     },
     "nicConfigurations": {
       "value": [
@@ -44,28 +44,28 @@
           "ipConfigurations": [
             {
               "name": "ipconfig1",
-              "subnetId": "/subscriptions/65862f1e-947f-4dd6-bd50-319d3c84eb36/resourceGroups/BSD-NETWORKS-EUS-RG/providers/Microsoft.Network/virtualNetworks/bsd-wvd-eus-vnet/subnets/wvd-cad-prod-hp-sn"
+              "subnetId": "/subscriptions/65862f1e-947f-4dd6-bd50-319d3c84eb36/resourceGroups/BSD-NETWORKS-EUS-RG/providers/Microsoft.Network/virtualNetworks/bsd-wvd-eus-vnet/subnets/wvd-prod-hp-sn"
             }
           ]
         }
       ]
     },
     "domainName": {
-      "value": "core.tbl.com"
+      "value": "<onpremdomain>"
     },
     "domainJoinUser": {
-      "value": "wvdjoin@core.tbl.com"
+      "value": "wvdjoin@<onpremdomain>"
     },
     "domainJoinPassword": {
       "reference": {
         "keyVault": {
-          "id": "/subscriptions/65862f1e-947f-4dd6-bd50-319d3c84eb36/resourceGroups/bsd-wvd-mgmt-eus-rg/providers/Microsoft.KeyVault/vaults/bsd-wvd-mgmt-kv"
+          "id": "/subscriptions/65862f1e-947f-4dd6-bd50-319d3c84eb36/resourceGroups/bsd-wvd-mgmt-rg/providers/Microsoft.KeyVault/vaults/bsd-wvd-mgmt-kv"
         },
         "secretName": "WVDJoin-Password"
       }
     },
     "domainJoinOU": {
-      "value": "OU=CAD; OU=Computers; OU=WVD; DC=core; DC=tbl; DC=com"
+      "value": "OU=Prod; OU=Computers; OU=WVD; DC=core; DC=tbl; DC=com"
     },
     "domainJoinRestart":{
       "value": true
@@ -85,7 +85,7 @@
             "function": "AddSessionHost"
           },
           "configurationArguments": {
-            "hostPoolName": "bsd-wvd-cad-prod-hp"
+            "hostPoolName": "bsd-wvd-prod-hp"
           }
         },
         "protectedSettings": {

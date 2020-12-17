@@ -24,7 +24,7 @@ variables:
 #endregion
 
 #region specific
-  rgFolderPath: '$(orchestrationPath)/bsd-wvd-cad-dev-hp-rg'
+  rgFolderPath: '$(orchestrationPath)/bsd-wvd-dev-hp-rg'
   location: eastus
 #endregion
 
@@ -81,13 +81,13 @@ variables:
 #region script variables
 
 ## ResourceGroup
-  resourceGroupName: 'bsd-wvd-cad-dev-hp-rg'
+  resourceGroupName: 'bsd-wvd-dev-hp-rg'
   WorkspaceName: 'CustomerNameWVDWorkspace'
-  WorkspaceResourceGroupName: 'bsd-wvd-mgmt-eus-rg'
+  WorkspaceResourceGroupName: 'bsd-wvd-mgmt-rg'
   
 # Host Pool related
 # -----------------
-  HostPoolName: 'bsd-wvd-cad-dev-hp'
+  HostPoolName: 'bsd-wvd-dev-hp'
 
 # Storage Account related
 # -----------------------
