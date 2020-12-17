@@ -110,7 +110,7 @@ variables:
   # If a custom image reference is provided, it is picked up instead of any provided marketplace image information. If not used, MUST be set to '' (empty)
   # Is used for the session host deployment as well as the host-pool image update process (if enabled)
   # SharedImageGalleryImageDefinitionID: '/subscriptions/<subscriptionid>/resourceGroups/<sharedimagegalleryrg>/providers/Microsoft.Compute/galleries/<SharedImageGalleryName>/images/<ImageDefinition>'
-  SharedImageGalleryImageDefinitionID: '/subscriptions/65862f1e-947f-4dd6-bd50-319d3c84eb36/resourceGroups/bsd-imaging-rg/providers/Microsoft.Compute/galleries/CustomerNameSharedImages/images/ComputerAidedDispatch' 
+  SharedImageGalleryImageDefinitionID: '/subscriptions/<subscriptionid>/resourceGroups/bsd-imaging-rg/providers/Microsoft.Compute/galleries/CustomerNameSharedImages/images/ComputerAidedDispatch' 
   ImageVersion: 'latest' # enter latest here or specify a version.
 
   ## Marketplace Image

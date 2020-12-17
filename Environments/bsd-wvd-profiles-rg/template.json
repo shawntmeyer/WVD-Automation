@@ -7,11 +7,11 @@
             "type": "String"
         },
         "virtualNetworks_bsd_hub_eus_vnet_externalid": {
-            "defaultValue": "/subscriptions/65862f1e-947f-4dd6-bd50-319d3c84eb36/resourceGroups/bsd-networks-eus-rg/providers/Microsoft.Network/virtualNetworks/bsd-hub-eus-vnet",
+            "defaultValue": "/subscriptions/<subscriptionid>/resourceGroups/bsd-networks-eus-rg/providers/Microsoft.Network/virtualNetworks/bsd-hub-eus-vnet",
             "type": "String"
         },
         "virtualNetworks_bsd_wvd_eus_vnet_externalid": {
-            "defaultValue": "/subscriptions/65862f1e-947f-4dd6-bd50-319d3c84eb36/resourceGroups/bsd-networks-eus-rg/providers/Microsoft.Network/virtualNetworks/bsd-wvd-eus-vnet",
+            "defaultValue": "/subscriptions/<subscriptionid>/resourceGroups/bsd-networks-eus-rg/providers/Microsoft.Network/virtualNetworks/bsd-wvd-eus-vnet",
             "type": "String"
         }
     },

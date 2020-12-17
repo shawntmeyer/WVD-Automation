@@ -57,7 +57,7 @@ Optional. Will promt user to confirm the action to create invasible commands
 Optional.  Dry run of the script
 
 .EXAMPLE
-Update-WVDHostPool -orchestrationFunctionsPath $path -HostPoolName 'test-cse-hp' -HostPoolRGName 'bsd-wvd-prod-dispatcher-hp-rg' -LogoffDeadline '202007042000' -LogOffMessageTitle 'Kidding' -LogOffMessageBody 'Just' -UtcOffset '1' -customImageReferenceId '/subscriptions/65862f1e-947f-4dd6-bd50-319d3c84eb36/resourceGroups/bsd-imaging-rg/providers/Microsoft.Compute/galleries/CustomerNameSharedImages/images/WIN10-20H2-DISPATCHER/versions/0.24322.55884'
+Update-WVDHostPool -orchestrationFunctionsPath $path -HostPoolName 'test-cse-hp' -HostPoolRGName 'bsd-wvd-prod-dispatcher-hp-rg' -LogoffDeadline '202007042000' -LogOffMessageTitle 'Kidding' -LogOffMessageBody 'Just' -UtcOffset '1' -customImageReferenceId '/subscriptions/<subscriptionid>/resourceGroups/bsd-imaging-rg/providers/Microsoft.Compute/galleries/CustomerNameSharedImages/images/WIN10-20H2-DISPATCHER/versions/0.24322.55884'
 
 Invoke the update host pool orchestration script with the given parameters
 #>
@@ -446,7 +446,7 @@ function Update-WVDHostPool {
         Value of the tag
         
         .EXAMPLE
-        Add-ResourceTag -resourceId '/subscriptions/65862f1e-947f-4dd6-bd50-319d3c84eb36/resourceGroups/myRG' -name 'test' -value 'withTagValue'
+        Add-ResourceTag -resourceId '/subscriptions/<subscriptionid>/resourceGroups/myRG' -name 'test' -value 'withTagValue'
 
         Add the tag 'test = withTagValue' to resource group 'myRG'
         #>

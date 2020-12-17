@@ -18,7 +18,7 @@
             "value": 127
         },
         "subnetId": {
-            "value": "/subscriptions/65862f1e-947f-4dd6-bd50-319d3c84eb36/resourceGroups/bsd-networks-eus-rg/providers/Microsoft.Network/virtualNetworks/bsd-wvd-eus-vnet/subnets/imaging-sn"
+            "value": "/subscriptions/<subscriptionid>/resourceGroups/bsd-networks-eus-rg/providers/Microsoft.Network/virtualNetworks/bsd-wvd-eus-vnet/subnets/imaging-sn"
         },
         "imageSource": {
             "value": {
@@ -110,7 +110,7 @@
             "value": ""
         },
         "sigImageDefinitionId": {
-            "value": "/subscriptions/65862f1e-947f-4dd6-bd50-319d3c84eb36/resourceGroups/bsd-imaging-rg/providers/Microsoft.Compute/galleries/CustomerNameSharedImages/images/ComputerAidedDispatch"
+            "value": "/subscriptions/<subscriptionid>/resourceGroups/bsd-imaging-rg/providers/Microsoft.Compute/galleries/CustomerNameSharedImages/images/ComputerAidedDispatch"
         },
         "imageReplicationRegions": {
             "value": [

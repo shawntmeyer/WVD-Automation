@@ -42,7 +42,7 @@ The time in minutes reserved to check for the health state.
 Optional. The time to wait in between the host-pool health checks in seconds.
 
 .EXAMPLE
-Invoke-HostPoolPostDeployment -orchestrationFunctionsPath $currentDir -HostPoolName 'myhostPool' -HostPoolRGName 'hostPoolRg' -customImageReferenceId '/subscriptions/65862f1e-947f-4dd6-bd50-319d3c84eb36/resourceGroups/bsd-imaging-rg/providers/Microsoft.Compute/galleries/CustomerNameSharedImages/images/WIN10-20H2-DISPATCHER/versions/0.24322.55884'
+Invoke-HostPoolPostDeployment -orchestrationFunctionsPath $currentDir -HostPoolName 'myhostPool' -HostPoolRGName 'hostPoolRg' -customImageReferenceId '/subscriptions/<subscriptionid>/resourceGroups/bsd-imaging-rg/providers/Microsoft.Compute/galleries/CustomerNameSharedImages/images/WIN10-20H2-DISPATCHER/versions/0.24322.55884'
 
 Invoke the host pool post-deployment with a custom image reference
 

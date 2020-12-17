@@ -29,7 +29,7 @@
     "adminPassword": {
       "reference": {
         "keyVault": {
-          "id": "/subscriptions/65862f1e-947f-4dd6-bd50-319d3c84eb36/resourceGroups/bsd-wvd-mgmt-rg/providers/Microsoft.KeyVault/vaults/bsd-wvd-mgmt-kv"
+          "id": "/subscriptions/<subscriptionid>/resourceGroups/bsd-wvd-mgmt-rg/providers/Microsoft.KeyVault/vaults/bsd-wvd-mgmt-kv"
         },
         "secretName": "localAdmin-Password"
       }
@@ -44,7 +44,7 @@
           "ipConfigurations": [
             {
               "name": "ipconfig1",
-              "subnetId": "/subscriptions/65862f1e-947f-4dd6-bd50-319d3c84eb36/resourceGroups/BSD-NETWORKS-EUS-RG/providers/Microsoft.Network/virtualNetworks/bsd-wvd-eus-vnet/subnets/wvd-admin-hp-sn"
+              "subnetId": "/subscriptions/<subscriptionid>/resourceGroups/BSD-NETWORKS-EUS-RG/providers/Microsoft.Network/virtualNetworks/bsd-wvd-eus-vnet/subnets/wvd-admin-hp-sn"
             }
           ]
         }
@@ -59,7 +59,7 @@
     "domainJoinPassword": {
       "reference": {
         "keyVault": {
-          "id": "/subscriptions/65862f1e-947f-4dd6-bd50-319d3c84eb36/resourceGroups/bsd-wvd-mgmt-rg/providers/Microsoft.KeyVault/vaults/bsd-wvd-mgmt-kv"
+          "id": "/subscriptions/<subscriptionid>/resourceGroups/bsd-wvd-mgmt-rg/providers/Microsoft.KeyVault/vaults/bsd-wvd-mgmt-kv"
         },
         "secretName": "WVDJoin-Password"
       }
