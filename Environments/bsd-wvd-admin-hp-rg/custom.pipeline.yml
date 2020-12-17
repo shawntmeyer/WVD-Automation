@@ -707,7 +707,7 @@ stages:
                 enabled: true
 
   ## Image lifecycle management script
-  - deployment: Update_SessionHosts_with_new_image
+  - deployment: Perform_HostPool_Lifecycle_Update
     dependsOn:
     - ${{ if eq(variables['enableJobDeploySessionHosts'], true) }}:
       - Deploy_WVDSessionHosts
