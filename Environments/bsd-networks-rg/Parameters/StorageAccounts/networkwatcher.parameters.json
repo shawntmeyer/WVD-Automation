@@ -1,0 +1,35 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"storageAccountName": {
+			"value": "hubnet-nwsa"
+		},
+		"storageAccountKind": {
+			"value": "StorageV2"
+		},
+		"storageAccountSku": {
+			"value": "Standard_GRS"
+		},
+		"storageAccountAccessTier": {
+			"value": "Hot"
+		},
+		"vNetId": {
+			"value": ""
+		},
+		"networkAcls": {
+			"value": {
+			}
+		},
+		"blobContainers": {
+			"value": [
+			]
+		},
+		"lockForDeletion": {
+			"value": false
+		},
+		"tags": {
+			"value": { "Demo":"HubNetwork" }
+		}
+	}
+}

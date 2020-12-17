@@ -1,0 +1,138 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "storageAccounts_wvdhxgneus_name": {
+            "defaultValue": "wvdhxgneus",
+            "type": "String"
+        },
+        "virtualNetworks_bsd_hub_eus_vnet_externalid": {
+            "defaultValue": "/subscriptions/65862f1e-947f-4dd6-bd50-319d3c84eb36/resourceGroups/bsd-networks-eus-rg/providers/Microsoft.Network/virtualNetworks/bsd-hub-eus-vnet",
+            "type": "String"
+        },
+        "virtualNetworks_bsd_wvd_eus_vnet_externalid": {
+            "defaultValue": "/subscriptions/65862f1e-947f-4dd6-bd50-319d3c84eb36/resourceGroups/bsd-networks-eus-rg/providers/Microsoft.Network/virtualNetworks/bsd-wvd-eus-vnet",
+            "type": "String"
+        }
+    },
+    "variables": {},
+    "resources": [
+        {
+            "type": "Microsoft.Storage/storageAccounts",
+            "apiVersion": "2020-08-01-preview",
+            "name": "[parameters('storageAccounts_wvdhxgneus_name')]",
+            "location": "eastus",
+            "sku": {
+                "name": "Premium_LRS",
+                "tier": "Premium"
+            },
+            "kind": "FileStorage",
+            "properties": {
+                "azureFilesIdentityBasedAuthentication": {
+                    "directoryServiceOptions": "AD",
+                    "activeDirectoryProperties": {
+                        "domainName": "core.tbl.com",
+                        "netBiosDomainName": "core.tbl.com",
+                        "forestName": "core.tbl.com",
+                        "domainGuid": "0d87b4ba-69ce-4e2e-8055-8c9ad8e105db",
+                        "domainSid": "S-1-5-21-825380463-220883744-4055404330",
+                        "azureStorageSid": "S-1-5-21-825380463-220883744-4055404330-4720"
+                    }
+                },
+                "minimumTlsVersion": "TLS1_2",
+                "allowBlobPublicAccess": true,
+                "largeFileSharesState": "Enabled",
+                "networkAcls": {
+                    "bypass": "AzureServices",
+                    "virtualNetworkRules": [
+                        {
+                            "id": "[concat(parameters('virtualNetworks_bsd_hub_eus_vnet_externalid'), '/subnets/devices-sn')]",
+                            "action": "Allow",
+                            "state": "Succeeded"
+                        },
+                        {
+                            "id": "[concat(parameters('virtualNetworks_bsd_wvd_eus_vnet_externalid'), '/subnets/wvd-sn')]",
+                            "action": "Allow",
+                            "state": "Succeeded"
+                        }
+                    ],
+                    "ipRules": [
+                        {
+                            "value": "52.151.237.243",
+                            "action": "Allow"
+                        }
+                    ],
+                    "defaultAction": "Allow"
+                },
+                "supportsHttpsTrafficOnly": true,
+                "encryption": {
+                    "services": {
+                        "file": {
+                            "keyType": "Account",
+                            "enabled": true
+                        },
+                        "blob": {
+                            "keyType": "Account",
+                            "enabled": true
+                        }
+                    },
+                    "keySource": "Microsoft.Storage"
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts/fileServices",
+            "apiVersion": "2020-08-01-preview",
+            "name": "[concat(parameters('storageAccounts_wvdhxgneus_name'), '/default')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_wvdhxgneus_name'))]"
+            ],
+            "sku": {
+                "name": "Premium_LRS",
+                "tier": "Premium"
+            },
+            "properties": {
+                "protocolSettings": {
+                    "smb": {}
+                },
+                "cors": {
+                    "corsRules": []
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts/fileServices/shares",
+            "apiVersion": "2020-08-01-preview",
+            "name": "[concat(parameters('storageAccounts_wvdhxgneus_name'), '/default/fslogix')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts/fileServices', parameters('storageAccounts_wvdhxgneus_name'), 'default')]",
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_wvdhxgneus_name'))]"
+            ],
+            "properties": {
+                "accessTier": "Premium",
+                "shareQuota": 1024,
+                "enabledProtocols": "SMB"
+            },
+			"roleAssignments": [
+            {
+              "roleDefinitionIdOrName": "Storage File Data SMB Share Elevated Contributor",
+              "principalIds": [
+                "c3544243-05eb-48a6-8790-92d608dc9166" // WVD Admins (AD group)
+              ]
+            },
+            {
+              "roleDefinitionIdOrName": "Storage File Data SMB Share Contributor",
+              "principalIds": [
+                "4123815e-994d-4884-a449-70bd1b494681" // WVD Users (AD group)
+              ]
+            },
+			           {
+              "roleDefinitionIdOrName": "Storage File Data SMB Share Contributor",
+              "principalIds": [
+                "d3eec286-2343-497f-85ac-6670623ba8ff" // WVD Users (AD group)
+              ]
+            }
+          ]
+        }
+    ]
+}

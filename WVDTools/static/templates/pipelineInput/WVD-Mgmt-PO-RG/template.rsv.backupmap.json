@@ -1,0 +1,12 @@
+{
+    "fileSharePolicyMaps": [
+        {
+            "policyName": "filesharepolicy",
+            "items": [
+                {
+                    "StorageAccountName": "[profilesSa01Name]"
+                }
+            ]
+        }
+    ]
+}

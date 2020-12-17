@@ -1,0 +1,69 @@
+#######################################################################
+##                                NOTE                               ##
+## ------------------------------------------------------------------##
+## - These variables are used to configure the pipeline and provide  ##
+##   variables to pipeline scripts                                   ##
+## - Parameters used for resource deployments are located in the     ##
+##   parameter files in the '.\Parameters' folder                    ##
+#######################################################################
+
+variables:
+
+#############
+## GENERAL ##
+#############
+#region general
+  orchestrationPath: [orchestrationPath] 
+  orchestrationFunctionsPath: [orchestrationFunctionsPath]
+  modulePath: Modules/$(moduleName)/$(moduleVersion)
+  vmImage: [vmImage]
+  poolName: [poolName]
+  componentStorageContainerName: [componentStorageContainerName]
+  serviceConnection: [serviceConnectionName]
+  componentStorageAccountSubscriptionId: [subscriptionId]
+  componentStorageAccountName: [componentStorageAccountName]
+  location: [PrimaryResourceLocation]
+#endregion
+
+#region specific
+rgFolderPath: '$(orchestrationPath)/[ProfilesRGName]'
+location: <ReplaceWith-PrimaryLocation>
+#endregion
+
+#######################
+## PIPELINE CONTROLS ##
+#######################
+#region pipeline controls
+
+# Pipeline Name
+# -------------
+pipelineName: '[ProfilesRGName] Deployment'
+
+# Deployed Module Specs
+# ---------------------
+  resourceGroupModuleName: ResourceGroup
+  resourceGroupModuleVersion: <ReplaceWith-ResourceGroupModuleVersion>
+
+  storageAccountModuleName: StorageAccounts
+  storageAccountModuleVersion: <ReplaceWith-StorageAccountsModuleVersion>
+
+# Jobs
+# ----
+  enableJobDeployResourceGroup: true # To enable/disable job
+  enableJobDeployStorageAccount01: true # To enable/disable job
+#endregion
+
+######################
+## SCRIPT VARIABLES ##
+######################
+#region script variables
+
+# ResourceGroup related
+# ---------------------
+  resourcegroupname: '[ProfilesRGName]'
+
+# FSLogix related - IdentityApproach (AD or AADDS)
+# ------------------------------------------------
+  # Controls the way the authentication towards the FSLogix file shares is set up
+  identityApproach: '[identityApproach]'
+#endregion

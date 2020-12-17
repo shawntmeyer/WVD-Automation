@@ -1,0 +1,37 @@
+name: $(resourceGroupName)
+
+trigger:
+  branches:
+    include:
+      - notrigger
+  paths:
+    include:
+    - Environments/network-hub-rg/*
+
+variables:
+  - template: pipeline.variables.yml
+
+stages:
+- stage: Production_HubNetworkDeployments
+  jobs:
+  - template: ./pipeline.jobs.yml
+    parameters:
+      vmImage: '$(Production-vmImage)'
+      poolName: '$(Production-poolName)'
+      serviceConnection: '$(Production-serviceConnection)'
+    
+- stage: DEV_HubNetworkDeployments
+  jobs:
+  - template: ./pipeline.jobs.yml
+    parameters:
+      vmImage: '$(DEV-vmImage)'
+      poolName: '$(DEV-poolName)'
+      serviceConnection: '$(DEV-serviceConnection)'
+    
+- stage: PRD_HubNetworkDeployments
+  jobs:
+  - template: ./pipeline.jobs.yml
+    parameters:
+      vmImage: '$(PRD-vmImage)'
+      poolName: '$(PRD-poolName)'
+      serviceConnection: '$(PRD-serviceConnection)'

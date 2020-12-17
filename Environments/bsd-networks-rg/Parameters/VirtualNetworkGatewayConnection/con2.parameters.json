@@ -1,0 +1,30 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"connectionName": {
+			"value": "hubnet-gwconnecttwo"
+		},
+		"virtualNetworkGatewayConnectionType": {
+			"value": "Ipsec"
+		},
+		"localVirtualNetworkGatewayName": {
+			"value": "hubnet-vpn"
+		},
+		"vpnSharedKey": {
+			"value": "vpnsharedkeysecret"
+		},
+		"remoteEntityName": {
+			"value": "hubnet-lngtwo"
+		},
+		"enableBgp": {
+			"value": true
+		},
+		"lockForDeletion": {
+			"value": false
+		},
+		"tags": {
+			"value": { "Demo":"HubNetwork" }
+		}
+	}
+}

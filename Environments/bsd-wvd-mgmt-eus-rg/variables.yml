@@ -1,0 +1,167 @@
+#######################################################################
+##                                NOTE                               ##
+## ------------------------------------------------------------------##
+## - These variables are used to configure the pipeline and provide  ##
+##   variables to pipeline scripts                                   ##
+## - Parameters used for resource deployments are located in the     ##
+##   parameter files in the '.\Parameters' folder                    ##
+#######################################################################
+
+variables: 
+
+#############
+## GENERAL ##
+#############
+#region general
+- name: orchestrationPath
+  value: Environments
+
+- name: orchestrationFunctionsPath
+  value: OrchestrationSources/SharedDeploymentFunctions
+
+- name: vmImage
+  value: 'ubuntu-latest'
+
+- name: poolName
+  value: ''
+
+- name: serviceConnection
+  value: 'Stardust SP Connection'
+  
+- name: artifactFeedPath
+  value: '$(System.Teamproject)/Components'
+  
+- name: packagePath
+  value: ModulePackages # The temporariy folder to store the artifacts in on the agent
+
+- name: downloadDirectory
+  value: $(Build.SourcesDirectory)/$(packagePath)
+#endregion
+
+#region specific
+- name: rgFolderPath
+  value: '$(orchestrationPath)/bsd-wvd-mgmt-eus-rg'
+
+- name: location
+  value: eastus
+#endregion
+
+#######################
+## PIPELINE CONTROLS ##
+#######################
+#region pipeline controls
+
+# Pipeline Name
+# -------------
+- name: pipelineName
+  value: 'bsd-wvd-mgmt-eus-rg Deployment'
+
+# Deployed Module Specs
+# ---------------------
+- name: resourceGroupModuleName
+  value: ResourceGroup
+- name: resourceGroupModuleVersion
+  value: '*'
+
+- name: keyVaultModuleName
+  value: KeyVault
+- name: keyVaultModuleVersion
+  value: '*'
+
+- name: logAnalyticsModuleName
+  value: LogAnalytics
+- name: logAnalyticsModuleVersion
+  value: '*'
+
+- name: storageAccountModuleName
+  value: StorageAccounts
+- name: storageAccountModuleVersion
+  value: '*' 
+
+- name: automationAccountModuleName
+  value: AutomationAccounts
+- name: automationAccountModuleVersion
+  value: '*'
+
+- name: rsvModuleName
+  value: RecoveryServicesVaults
+- name: rsvModuleVersion
+  value: '*'  
+
+# Jobs
+# ----
+- name: enableJobDeployResourceGroup # To enable/disable job
+  value: true
+
+- name: enableJobDeployWVDKeyVault # To enable/disable job
+  value: true
+
+- name: enableJobDeployAssetsStorageAccount # To enable/disable job
+  value: false
+
+- name: enableJobDeployAutomationAccount # To enable/disable job
+  value: true
+
+- name: enableJobDeployRSV # To enable/disable job
+  value: true
+#endregion
+
+######################
+## SCRIPT VARIABLES ##
+######################
+#region script variables
+
+# ResourceGroup related
+# ---------------------
+- name: resourcegroupname
+  value: 'bsd-wvd-mgmt-eus-rg'
+
+# Key Vault related
+#------------------
+  # The DevOps variable groups host the secrets required for the deployments 
+- group: 'WVDAutomationSecrets'
+
+- name: domainJoinUserName
+  value: 'WVDJoin'
+
+- name: keyVaultName
+  value: 'bsd-wvd-mgmt-kv'
+
+# Storage Account related
+# -----------------------
+- name: wvdAssetsStorageAccount
+  value: 'bsddepassetsstore'
+
+  # The folder hosting the files to upload to the assets storage account
+- name: wvdUploadsPath
+  value: 'OrchestrationSources/Uploads'
+
+# Auto Account related
+# --------------------
+- name: AutomationAccountName
+  value: 'WVDScalingAutomationAccount'
+
+- name: ScalingRunbookName
+  value: 'WVDScalingRunBook'
+
+- name: ScalingWebhookName
+  value: 'WVDScalingWebhook'
+
+- name: RunAsConnectionSPName
+  value: 'WVDScalingRunAsConnection'
+
+- name: RunAsSelfSignedCertSecretName
+  value: 'WVDScalingRunAsSecret'
+
+- name: AutoAccountRunAsCertExpiryInMonths
+  value: '23'
+
+  # Optional. If specified, Log Analytics will be used to configure the custom log table that the runbook PowerShell script can send logs to
+- name: LAWorkspaceName
+  value: ''  
+
+# Recovery Services Vault related
+# -------------------------------
+- name: profilesBackupVault
+  value: 'bsd-profiles-eus-rsv'
+#endregion

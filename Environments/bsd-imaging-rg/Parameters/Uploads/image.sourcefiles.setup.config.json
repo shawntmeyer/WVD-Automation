@@ -1,0 +1,8 @@
+{
+    "Mapping": [
+        {
+            "SourcePath": "fslogix.parameters.json",
+            "TargetPath": "WVDScripts/001-FSLogix"
+        }
+    ]
+}

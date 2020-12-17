@@ -1,0 +1,297 @@
+parameters:
+  vmImage: $(vmImage)
+  poolName: $(poolName)
+  serviceConnection: '$(serviceConnection)'
+
+jobs:
+# Resource Group
+# --------------
+- template: /.templates/pipeline.jobs.artifact.deploy.yml
+  parameters:
+    displayName: 'Deploy ResourceGroup'
+    moduleName: '$(RGModuleName)'
+    moduleVersion: '$(RGModuleVersion)'
+    parameterFilePath: 'ResourceGroup/parameters.json'
+    vmImage: '${{ parameters.vmImage }}'
+    poolName: '${{ parameters.poolName }}'
+    serviceConnection: '${{ parameters.serviceConnection }}'
+    enabled: true
+
+- template: /.templates/pipeline.jobs.artifact.deploy.yml
+  parameters:
+    displayName: 'Deploy Public IP Prefix'
+    moduleName: '$(PublicIpPrefixesModuleName)'
+    moduleVersion: '$(PublicIpPrefixesModuleVersion)'
+    parameterFilePath: 'PublicIpPrefix/parameters.json'
+    vmImage: '${{ parameters.vmImage }}'
+    poolName: '${{ parameters.poolName }}'
+    serviceConnection: '${{ parameters.serviceConnection }}'
+    enabled: true
+    dependsOn:
+    - Deploy_ResourceGroup
+
+# Express Route
+# -------------
+- template: .templates/pipeline.jobs.artifact.deploy.yml
+  parameters:
+    displayName: 'Deploy ExpressRouteCircuit'
+    moduleName: '$(ExpressRouteCircuitModuleName)'
+    moduleVersion: '$(ExpressRouteCircuitModuleVersion)'
+    parameterFilePath: 'ExpressRouteCircuit/parameters.json'
+    vmImage: '${{ parameters.vmImage }}'
+    poolName: '${{ parameters.poolName }}'
+    serviceConnection: '${{ parameters.serviceConnection }}'
+    enabled: true
+    dependsOn:
+    - Deploy_ResourceGroup
+
+# Storage Accounts
+# ----------------
+- template: .templates/pipeline.jobs.artifact.deploy.yml
+  parameters:
+    displayName: 'Deploy NetworkWatcher StorageAccount'
+    moduleName: '$(StorageAccountsModuleName)'
+    moduleVersion: '$(StorageAccountsModuleVersion)'
+    parameterFilePath: 'StorageAccounts/networkwatcher.parameters.json'
+    vmImage: '${{ parameters.vmImage }}'
+    poolName: '${{ parameters.poolName }}'
+    serviceConnection: '${{ parameters.serviceConnection }}'
+    enabled: true
+    dependsOn:
+    - Deploy_ResourceGroup
+
+# Azure Bastion
+# -------------
+- template: .templates/pipeline.jobs.artifact.deploy.yml
+  parameters:
+    displayName: 'Deploy AzureBastion'
+    moduleName: '$(AzureBastionModuleName)'
+    moduleVersion: '$(AzureBastionModuleVersion)'
+    parameterFilePath: 'AzureBastion/parameters.json'
+    vmImage: '${{ parameters.vmImage }}'
+    poolName: '${{ parameters.poolName }}'
+    serviceConnection: '${{ parameters.serviceConnection }}'
+    enabled: true
+    dependsOn:
+    - Deploy_ResourceGroup
+    - Deploy_Public_IP_Prefix
+    - Deploy_local_VNET
+
+# NSGs
+# ----
+- template: .templates/pipeline.jobs.artifact.deploy.yml
+  parameters:
+    displayName: 'Deploy Bastion NSG'
+    moduleName: '$(NsgModuleName)'
+    moduleVersion: '$(NsgModuleVersion)'
+    parameterFilePath: 'NetworkSecurityGroups/bastion.parameters.json'
+    vmImage: '${{ parameters.vmImage }}'
+    poolName: '${{ parameters.poolName }}'
+    serviceConnection: '${{ parameters.serviceConnection }}'
+    enabled: true
+    dependsOn:
+    - Deploy_ResourceGroup
+
+- template: .templates/pipeline.jobs.artifact.deploy.yml
+  parameters:
+    displayName: 'Deploy NVA Frontend NSG'
+    moduleName: '$(NsgModuleName)'
+    moduleVersion: '$(NsgModuleVersion)'
+    parameterFilePath: 'NetworkSecurityGroups/nvafrontend.parameters.json'
+    vmImage: '${{ parameters.vmImage }}'
+    poolName: '${{ parameters.poolName }}'
+    serviceConnection: '${{ parameters.serviceConnection }}'
+    enabled: true
+    dependsOn:
+    - Deploy_ResourceGroup
+
+- template: .templates/pipeline.jobs.artifact.deploy.yml
+  parameters:
+    displayName: 'Deploy NVA Backend NSG'
+    moduleName: '$(NsgModuleName)'
+    moduleVersion: '$(NsgModuleVersion)'
+    parameterFilePath: 'NetworkSecurityGroups/nvabackend.parameters.json'
+    vmImage: '${{ parameters.vmImage }}'
+    poolName: '${{ parameters.poolName }}'
+    serviceConnection: '${{ parameters.serviceConnection }}'
+    enabled: true
+    dependsOn:
+    - Deploy_ResourceGroup
+
+# Route Tables
+# ------------
+- template: .templates/pipeline.jobs.artifact.deploy.yml
+  parameters:
+    displayName: 'Deploy Gateway Subnet Route Table'
+    moduleName: '$(RouteTablesModuleName)'
+    moduleVersion: '$(RouteTablesModuleVersion)'
+    parameterFilePath: 'RouteTables/gatewaySubnet.parameters.json'
+    vmImage: '${{ parameters.vmImage }}'
+    poolName: '${{ parameters.poolName }}'
+    serviceConnection: '${{ parameters.serviceConnection }}'
+    enabled: true
+    dependsOn:
+    - Deploy_ResourceGroup
+
+- template: .templates/pipeline.jobs.artifact.deploy.yml
+  parameters:
+    displayName: 'Deploy NVA Frontend Route Table'
+    moduleName: '$(RouteTablesModuleName)'
+    moduleVersion: '$(RouteTablesModuleVersion)'
+    parameterFilePath: 'RouteTables/nvaFrontend.parameters.json'
+    vmImage: '${{ parameters.vmImage }}'
+    poolName: '${{ parameters.poolName }}'
+    serviceConnection: '${{ parameters.serviceConnection }}'
+    enabled: true
+    dependsOn:
+    - Deploy_ResourceGroup
+
+- template: .templates/pipeline.jobs.artifact.deploy.yml
+  parameters:
+    displayName: 'Deploy NVA Backend Route Table'
+    moduleName: '$(RouteTablesModuleName)'
+    moduleVersion: '$(RouteTablesModuleVersion)'
+    parameterFilePath: 'RouteTables/nvaBackend.parameters.json'
+    vmImage: '${{ parameters.vmImage }}'
+    poolName: '${{ parameters.poolName }}'
+    serviceConnection: '${{ parameters.serviceConnection }}'
+    enabled: true
+    dependsOn:
+    - Deploy_ResourceGroup
+
+# Network Watcher
+# ---------------
+- template: .templates/pipeline.jobs.artifact.deploy.yml
+  parameters:
+    displayName: 'Deploy NetworkWatcher'
+    moduleName: '$(NetworkWatcherModuleName)'
+    moduleVersion: '$(NetworkWatcherModuleVersion)'
+    parameterFilePath: 'NetworkWatcher/parameters.json'
+    vmImage: '${{ parameters.vmImage }}'
+    poolName: '${{ parameters.poolName }}'
+    serviceConnection: '${{ parameters.serviceConnection }}'
+    enabled: true
+    dependsOn:
+    - Deploy_ResourceGroup
+
+# DDOS Protection Plan
+# --------------------
+- template: .templates/pipeline.jobs.artifact.deploy.yml
+  parameters:
+    displayName: 'Deploy DDOS Protection Plan'
+    moduleName: '$(DdosProtectionPlansModuleName)'
+    moduleVersion: '$(DdosProtectionPlansModuleVersion)'
+    parameterFilePath: 'DdosProtectionPlan/parameters.json'
+    vmImage: '${{ parameters.vmImage }}'
+    poolName: '${{ parameters.poolName }}'
+    serviceConnection: '${{ parameters.serviceConnection }}'
+    enabled: true
+    dependsOn:
+    - Deploy_ResourceGroup
+
+# VNETs
+# -----
+- template: .templates/pipeline.jobs.artifact.deploy.yml
+  parameters:
+    displayName: 'Deploy local VNET'
+    moduleName: '$(VnetModuleName)'
+    moduleVersion: '$(VnetModuleVersion)'
+    parameterFilePath: 'VirtualNetwork/local.parameters.json'
+    vmImage: '${{ parameters.vmImage }}'
+    poolName: '${{ parameters.poolName }}'
+    serviceConnection: '${{ parameters.serviceConnection }}'
+    enabled: true
+    dependsOn:
+    - Deploy_NetworkWatcher
+    - Deploy_DDOS_Protection_Plan
+    - Deploy_Gateway_Subnet_Route_Table
+    - Deploy_NVA_Frontend_Route_Table
+    - Deploy_NVA_Backend_Route_Table
+    - Deploy_NVA_Frontend_NSG
+    - Deploy_NVA_Backend_NSG
+    - Deploy_Bastion_NSG
+
+# Peering
+# -------
+- template: .templates/pipeline.jobs.artifact.deploy.yml
+  parameters:
+    displayName: 'Deploy local VNET peering'
+    moduleName: '$(VnetPeeringModuleName)'
+    moduleVersion: '$(VnetPeeringModuleVersion)'
+    parameterFilePath: 'VirtualNetworkPeering/local.parameters.json'
+    vmImage: '${{ parameters.vmImage }}'
+    poolName: '${{ parameters.poolName }}'
+    serviceConnection: '${{ parameters.serviceConnection }}'
+    enabled: true
+    dependsOn:
+    - Deploy_local_VNET
+
+# Gateway
+# -------
+- template: .templates/pipeline.jobs.artifact.deploy.yml
+  parameters:
+    displayName: 'Deploy Local 1 Network Gateway'
+    moduleName: '$(LocalNetworkGatewayModuleName)'
+    moduleVersion: '$(LocalNetworkGatewayModuleVersion)'
+    parameterFilePath: 'LocalNetworkGateway/local1.parameters.json'
+    vmImage: '${{ parameters.vmImage }}'
+    poolName: '${{ parameters.poolName }}'
+    serviceConnection: '${{ parameters.serviceConnection }}'
+    enabled: true
+    dependsOn:
+    - Deploy_ResourceGroup
+
+- template: .templates/pipeline.jobs.artifact.deploy.yml
+  parameters:
+    displayName: 'Deploy Local 2 Network Gateway'
+    moduleName: '$(LocalNetworkGatewayModuleName)'
+    moduleVersion: '$(LocalNetworkGatewayModuleVersion)'
+    parameterFilePath: 'LocalNetworkGateway/local2.parameters.json'
+    vmImage: '${{ parameters.vmImage }}'
+    poolName: '${{ parameters.poolName }}'
+    serviceConnection: '${{ parameters.serviceConnection }}'
+    enabled: true
+    dependsOn:
+    - Deploy_ResourceGroup
+
+- template: .templates/pipeline.jobs.artifact.deploy.yml
+  parameters:
+    displayName: 'Deploy VPN Gateway'
+    moduleName: '$(VirtualNetworkGatewayModuleName)'
+    moduleVersion: '$(VirtualNetworkGatewayModuleVersion)'
+    parameterFilePath: 'VirtualNetworkGateway\parameters.json'
+    vmImage: '${{ parameters.vmImage }}'
+    poolName: '${{ parameters.poolName }}'
+    serviceConnection: '${{ parameters.serviceConnection }}'
+    enabled: true
+    dependsOn:
+    - Deploy_Public_IP_Prefix
+    - Deploy_local_VNET
+
+- template: .templates/pipeline.jobs.artifact.deploy.yml
+  parameters:
+    displayName: 'Deploy VPN Gateway Connection 1'
+    moduleName: '$(VirtualNetworkGatewayConnectionModuleName)'
+    moduleVersion: '$(VirtualNetworkGatewayConnectionModuleVersion)'
+    parameterFilePath: 'VirtualNetworkGatewayConnection/con1.parameters.json'
+    vmImage: '${{ parameters.vmImage }}'
+    poolName: '${{ parameters.poolName }}'
+    serviceConnection: '${{ parameters.serviceConnection }}'
+    enabled: true
+    dependsOn:
+    - Deploy_VPN_Gateway
+    - Deploy_Local_1_Network_Gateway
+
+- template: .templates/pipeline.jobs.artifact.deploy.yml
+  parameters:
+    displayName: 'Deploy VPN Gateway Connection 2'
+    moduleName: '$(VirtualNetworkGatewayConnectionModuleName)'
+    moduleVersion: '$(VirtualNetworkGatewayConnectionModuleVersion)'
+    parameterFilePath: 'VirtualNetworkGatewayConnection/con2.parameters.json'
+    vmImage: '${{ parameters.vmImage }}'
+    poolName: '${{ parameters.poolName }}'
+    serviceConnection: '${{ parameters.serviceConnection }}'
+    enabled: true
+    dependsOn:
+    - Deploy_VPN_Gateway
+    - Deploy_Local_2_Network_Gateway

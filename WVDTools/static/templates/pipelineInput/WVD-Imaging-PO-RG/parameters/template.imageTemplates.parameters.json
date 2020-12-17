@@ -1,0 +1,60 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "imageTemplateName": {
+            "value": "[imageTemplate01Name]"
+        },
+        "userMsiName": {
+            "value": "[imagingMsiName]"
+        },
+        "buildTimeoutInMinutes": {
+            "value": 0
+        },
+        "vmSize": {
+            "value": "[imageTemplate01VMSize]"
+        },
+        "osDiskSizeGB": {
+            "value": 127
+        },
+        "subnetId": {
+            "value": "[imageTemplate01AzureImageBuilderSubnetId]"
+        },
+        "imageSource": {
+            "value": {
+                "type": "[imageTemplate01SourceType]",
+                "publisher": "[image01SourcePublisher]",
+                "offer": "[image01SourceOffer]",
+                "sku": "[image01SourceSku]",
+                "version": "[image01SourceVersion]"
+            }
+        },
+        "customizationSteps": {
+            "value": [
+                {
+                    "type": "WindowsRestart",
+                    "restartTimeout": "30m"
+                }
+            ]
+        },
+        "managedImageName": {
+            "value": ""
+        },
+        "unManagedImageName": {
+            "value": ""
+        },
+        "sigImageDefinitionId": {
+            "value": "<sigImageDefinitionId>"
+        },
+        "imageReplicationRegions": {
+            "value": [
+            ]
+        },
+        "lockForDeletion": {
+            "value": false
+        },
+        "tags": {
+            "value": {}
+        }
+    }
+}

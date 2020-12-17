@@ -1,0 +1,32 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "appGroupName": {
+            "value": "bsd-wvd-cad-prod-dag"
+        },
+        "appGroupType": {
+            "value": "Desktop"
+        },
+        "hostpoolName": {
+            "value": "bsd-wvd-cad-prod-hp"
+        },
+        "appGroupFriendlyName": {
+            "value": "Prod CAD Desktop"
+        },
+        "appGroupDescription": {
+            "value": "Prod Full CAD Desktop"
+        },
+        "roleAssignments": {
+            "value": [
+                {
+                    "roleDefinitionIdOrName": "Desktop Virtualization User",
+                    "principalIds": [
+                        "d3eec286-2343-497f-85ac-6670623ba8ff", // WVD - CAD - Dispatchers - MD
+                        "4123815e-994d-4884-a449-70bd1b494681" // WVD - CAD - Supervisors - MD
+                    ]
+                }
+            ]
+        }
+    }
+}

@@ -1,0 +1,73 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "imageDefinitionName": {
+            "value": "[image01Name]"
+        },
+        "galleryName": {
+            "value": "[imgGalleryName]"
+        },
+        "osType": {
+            "value": "[imgDef01OsType]"
+        },
+        "osState": {
+            "value": "[imgDef01OsState]"
+        },
+        "publisher": {
+            "value": "[image01SourcePublisher]"
+        },
+        "offer": {
+            "value": "[image01SourceOffer]"
+        },
+        "sku": {
+            "value": "[image01SourceSku]"
+        },
+        "minRecommendedvCPUs": {
+            "value": "[imgDef01MinRecommendedvCPUs]"
+        },
+        "maxRecommendedvCPUs": {
+            "value": "[imgDef01MaxRecommendedvCPUs]"
+        },
+        "minRecommendedMemory": {
+            "value": "[imgDef01MinRecommendedMemory]"
+        },
+        "maxRecommendedMemory": {
+            "value": "[imgDef01MaxRecommendedMemory]"
+        },
+        "hyperVGeneration": {
+            "value": "[imgDef01HyperVGeneration]"
+        },
+        "imageDefinitionDescription": {
+            "value": ""
+        },
+        "eula": {
+            "value": ""
+        },
+        "privacyStatementUri": {
+            "value": ""
+        },
+        "releaseNoteUri": {
+            "value": ""
+        },
+        "productName": {
+            "value": ""
+        },
+        "planName": {
+            "value": ""
+        },
+        "planPublisherName": {
+            "value": ""
+        },
+        "endOfLife": {
+            "value": ""
+        },
+        "excludedDiskTypes": {
+            "value": [
+            ]
+        },
+        "tags": {
+            "value": {}
+        }
+    }
+}

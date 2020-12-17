@@ -1,0 +1,36 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"routeTableName": {
+			"value": "bsd-wvd-vnet-imaging-sn-rt"
+
+		},
+		"routes": {
+			"value": [
+				{
+					"name": "Default",
+					"properties": {
+						"addressPrefix": "0.0.0.0/0",
+						"nextHopType": "VirtualAppliance",
+						"nextHopIpAddress": "172.17.0.4"
+					}
+				},
+				{
+					"name": "Subnet",
+					"properties": {
+						"addressPrefix": "172.17.9.0/28",
+						"nextHopType": "VnetLocal"
+					}
+				}
+				
+			]
+		},
+		"disableBgpRoutePropagation": {
+			"value": false
+		},
+		"tags": {
+			"value": { "Environment":"Production" }
+		}
+	}
+}

@@ -1,0 +1,31 @@
+parameters:
+- name: moduleName
+  type: string
+
+- name: moduleVersion
+  type: string
+
+- name: artifactFeedPath
+  type: string
+  default: '$(artifactFeedPath)'
+
+- name: enabled
+  type: boolean
+  default: true
+
+steps:
+- powershell: |
+    $lowerModuleName = "${{ parameters.moduleName }}".ToLower()
+    Write-Host "##vso[task.setVariable variable=lowerModuleName]$lowerModuleName"
+  displayName: 'Prepare download from artifacts feed'
+  enabled: ${{ parameters.enabled }}
+
+- task: UniversalPackages@0
+  displayName: 'Download module [${{ parameters.moduleName }}] version [${{ parameters.moduleVersion }}] from feed [${{ parameters.artifactFeedPath }}]'
+  inputs:
+    command: download
+    vstsFeed: '${{ parameters.artifactFeedPath }}'
+    vstsFeedPackage: '$(lowerModuleName)'
+    vstsPackageVersion: '${{ parameters.moduleVersion }}'
+    downloadDirectory: '$(Build.SourcesDirectory)/$(packagePath)'
+    enabled: ${{ parameters.enabled }}

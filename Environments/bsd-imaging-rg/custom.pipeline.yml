@@ -1,0 +1,849 @@
+name: $(pipelineName)
+
+variables:
+- template: variables.yml
+
+trigger: none
+
+stages:
+- stage: Production
+  jobs:
+  - deployment: Deploy_Imaging_ResourceGroup
+    dependsOn: ''
+    environment: Production
+    condition: | 
+      and(
+        not(canceled()), 
+        eq(variables['enableJobDeployResourceGroup'], true)
+      )
+    timeoutInMinutes: 120
+    pool:
+      ${{ if ne(variables.vmImage, '') }}:
+          vmImage: $(vmImage)
+      ${{ if ne(variables.poolName, '') }}:
+          name: $(poolName)
+    strategy:
+        runOnce:
+          deploy:
+            steps:
+              - checkout: self
+              - template: ../.templates/pipeline.steps.artifact.yml
+                parameters:
+                  moduleName: '$(resourceGroupModuleName)'
+                  moduleVersion: '$(resourceGroupModuleVersion)'
+              - task: AzurePowerShell@4
+                displayName: 'Deploy Resource Group: [$(resourcegroupname)] via [$(serviceConnection)]'
+                name: Deploy_ResourceGroup_Task
+                inputs:
+                  azureSubscription: $(serviceConnection)
+                  ScriptType: InlineScript
+                  inline: |
+                    Write-Verbose "Load function" -Verbose
+                    . '$(Build.SourcesDirectory)/$(orchestrationFunctionsPath)/GeneralDeployment/Invoke-GeneralDeployment.ps1'
+
+                    $parameterFilePath = '$(rgFolderPath)/Parameters/resourcegroup.parameters.json'
+                    $functionInput = @{
+                      location          = '$(location)'
+                      modulePackagePath = Join-Path '$(Build.SourcesDirectory)/$(packagePath)' '$(resourceGroupModuleName)'
+                      parameterFilePath = $parameterFilePath
+                    }
+
+                    Write-Verbose "Invoke task with $functionInput" -Verbose
+                    $functionInput.Keys | ForEach-Object { Write-Verbose ("PARAMETER: `t'{0}' with value '{1}'" -f $_, $functionInput[$_]) -Verbose }
+
+                    Invoke-GeneralDeployment @functionInput -Verbose
+                  errorActionPreference: stop
+                  azurePowerShellVersion: LatestVersion
+                enabled: true
+              - task: AzurePowerShell@4
+                displayName: 'Register providers in subscription'
+                inputs:
+                  azureSubscription: $(serviceConnection)
+                  ScriptType: InlineScript
+                  azurePowerShellVersion: LatestVersion
+                  errorActionPreference: stop
+                  inline: |
+                    $maximumRetries = 60
+                    $waitTime = 10
+                    $requiredResourceProviders = @(
+                        'Microsoft.VirtualMachineImages'
+                    )
+
+                    foreach ($requiredResourceProvider in $requiredResourceProviders) {
+                        $states = (Get-AzResourceProvider -ProviderNamespace $requiredResourceProvider).RegistrationState
+                        if ($states -contains 'NotRegistered' -or $states -contains 'Unregistered') {
+                            Write-Verbose "Resource provider '$requiredResourceProvider' not registered. Registering" -Verbose
+                            Register-AzResourceProvider -ProviderNamespace $requiredResourceProvider
+                        }
+                        else {
+                            Write-Verbose "Resource provider '$requiredResourceProvider' already registered" -Verbose
+                        }
+                    }
+
+                    foreach ($requiredResourceProvider in $requiredResourceProviders) {
+                        $currentTry = 0
+                        do {
+                            Write-Verbose "Resource provider '$requiredResourceProvider' still registering. Waiting $waitTime seconds [$currentTry|$maximumRetries]" -Verbose
+                            Start-Sleep $waitTime
+                            $currentTry++
+                        } while ($currentTry -le $maximumRetries -and (Get-AzResourceProvider -ProviderNamespace $requiredResourceProvider).RegistrationState -contains 'Registering')
+                    }
+                    
+  ## Storage Account
+  - deployment: Deploy_ImageAssets_StorageAccount
+    dependsOn:
+    - ${{ if eq(variables['enableJobDeployResourceGroup'], true) }}:
+      - Deploy_Imaging_ResourceGroup
+    environment: Production
+    condition: |
+      and (
+        not(canceled()),
+        eq(variables['enableJobDeployImageAssetsStorageAccount'], true),
+        in(dependencies.Deploy_Imaging_ResourceGroup.result, '', 'Succeeded', 'Skipped')
+      )
+    timeoutInMinutes: 120
+    pool:
+      ${{ if ne(variables.vmImage, '') }}:
+          vmImage: $(vmImage)
+      ${{ if ne(variables.poolName, '') }}:
+          name: $(poolName)
+    strategy:
+        runOnce:
+          deploy:
+            steps:
+              - checkout: self
+              - template: ../.templates/pipeline.steps.artifact.yml
+                parameters:
+                  moduleName: '$(storageAccountModuleName)'
+                  moduleVersion: '$(storageAccountModuleVersion)'
+              - task: AzurePowerShell@4
+                displayName: 'Deploy Image Asset Storage Account in [$(resourcegroupname)] via [$(serviceConnection)]'
+                name: Deploy_StorageAccounts_Task
+                inputs:
+                  azureSubscription: $(serviceConnection)
+                  ScriptType: InlineScript
+                  inline: |
+                    Write-Verbose "Load function" -Verbose
+                    . '$(Build.SourcesDirectory)/$(orchestrationFunctionsPath)/GeneralDeployment/Invoke-GeneralDeployment.ps1'
+
+                    $parameterFilePath = '$(rgFolderPath)/Parameters/storageaccount.parameters.json'
+                    $functionInput = @{
+                      resourcegroupName = '$(resourcegroupname)'
+                      modulePackagePath = Join-Path '$(Build.SourcesDirectory)/$(packagePath)' '$(storageAccountModuleName)'
+                      parameterFilePath = $parameterFilePath
+                    }
+
+                    Write-Verbose "Invoke task with" -Verbose
+                    $functionInput.Keys | ForEach-Object { Write-Verbose ("PARAMETER: `t'{0}' with value '{1}'" -f $_, $functionInput[$_]) -Verbose }
+
+                    Invoke-GeneralDeployment @functionInput -Verbose
+                  errorActionPreference: stop
+                  azurePowerShellVersion: LatestVersion
+                enabled: true
+              - task: AzurePowerShell@4
+                displayName: "Run Storage Account post-deployment"
+                name: PostDeploy_StorageAccounts_Task
+                inputs:
+                  azureSubscription: $(serviceConnection)
+                  ScriptType: InlineScript
+                  inline: | 
+                    Write-Verbose "Load function" -Verbose
+                    . '$(Build.SourcesDirectory)/$(orchestrationFunctionsPath)/GeneralDeployment/Invoke-StorageAccountPostDeployment.ps1'
+
+                    $functionInput = @{
+                      orchestrationFunctionsPath = Join-Path '$(Build.SourcesDirectory)' '$(orchestrationFunctionsPath)'
+                      resourceGroupPath          = Join-Path '$(Build.SourcesDirectory)' '$(rgFolderPath)'
+                      wvdUploadsPath             = Join-Path '$(Build.SourcesDirectory)' '$(wvdUploadsPath)'   
+                      storageAccountName         = "$(wvdImageAssetsStorageAccount)"
+                      targetContainer            = '$(targetContainer)'       
+                    }
+
+                    Write-Verbose "Invoke task with" -Verbose
+                    $functionInput.Keys | ForEach-Object { Write-Verbose ("PARAMETER: `t'{0}' with value '{1}'" -f $_, $functionInput[$_]) -Verbose }
+
+                    Invoke-StorageAccountPostDeployment @functionInput -Verbose
+                  errorActionPreference: stop
+                  azurePowerShellVersion: LatestVersion
+                enabled: true
+
+  ## User Assigned Identity (MSI)
+  - deployment: Deploy_UserAssignedIdentity
+    dependsOn:
+    - ${{ if eq(variables['enableJobDeployResourceGroup'], true) }}:
+      - Deploy_Imaging_ResourceGroup
+    environment: Production
+    condition: |
+      and (
+        not(canceled()),
+        eq(variables['enableJobDeployUserAssignedIdentity'], true),
+        in(dependencies.Deploy_Imaging_ResourceGroup.result, '', 'Succeeded', 'Skipped')
+      )
+    timeoutInMinutes: 120
+    pool:
+      ${{ if ne(variables.vmImage, '') }}:
+          vmImage: $(vmImage)
+      ${{ if ne(variables.poolName, '') }}:
+          name: $(poolName)
+    strategy:
+        runOnce:
+          deploy:
+            steps:
+              - checkout: self
+              - template: ../.templates/pipeline.steps.artifact.yml
+                parameters:
+                  moduleName: '$(msiModuleName)'
+                  moduleVersion: '$(msiModuleVersion)'
+              - task: AzurePowerShell@4
+                displayName: 'Create User Assigned Identity in [$(resourcegroupname)] via [$(serviceConnection)]'
+                name: Deploy_UserAssignedIdentity_Task
+                inputs:
+                  azureSubscription: $(serviceConnection)
+                  ScriptType: InlineScript
+                  inline: |
+                    Write-Verbose "Load function" -Verbose
+                    . '$(Build.SourcesDirectory)/$(orchestrationFunctionsPath)/GeneralDeployment/Invoke-GeneralDeployment.ps1'
+
+                    $parameterFilePath = '$(rgFolderPath)/Parameters/userAssignedIdentity.parameters.json'
+                    $functionInput = @{
+                      resourcegroupName = '$(resourcegroupname)'
+                      modulePackagePath = Join-Path '$(Build.SourcesDirectory)/$(packagePath)' '$(msiModuleName)'
+                      parameterFilePath = $parameterFilePath
+                    }
+
+                    Write-Verbose "Invoke task with" -Verbose
+                    $functionInput.Keys | ForEach-Object { Write-Verbose ("PARAMETER: `t'{0}' with value '{1}'" -f $_, $functionInput[$_]) -Verbose }
+
+                    Invoke-GeneralDeployment @functionInput -Verbose
+                  errorActionPreference: stop
+                  azurePowerShellVersion: LatestVersion
+                enabled: true
+
+  ## Subscription contributor and Storage Account Blob Data Reader assignments
+  - deployment: Deploy_UserAssignedIdentity_RoleAssignments
+    dependsOn:
+    - ${{ if eq(variables['enableJobDeployResourceGroup'], true) }}:
+      - Deploy_Imaging_ResourceGroup
+    - ${{ if eq(variables['enableJobDeployUserAssignedIdentity'], true) }}:
+      - Deploy_UserAssignedIdentity
+    environment: Production
+    condition: |
+      and (
+        not(canceled()),
+        eq(variables['enableJobUserAssignedIdentityRoleAssignments'], true),
+        in(dependencies.Deploy_Imaging_ResourceGroup.result, '', 'Succeeded', 'Skipped'),
+        in(dependencies.Deploy_UserAssignedIdentity.result, '', 'Succeeded', 'Skipped')
+      )
+    timeoutInMinutes: 120
+    pool:
+      ${{ if ne(variables.vmImage, '') }}:
+          vmImage: $(vmImage)
+      ${{ if ne(variables.poolName, '') }}:
+          name: $(poolName)
+    variables:
+      msiPrincipalId: $[ dependencies.Deploy_UserAssignedIdentity.outputs['Deploy_UserAssignedIdentity.Deploy_UserAssignedIdentity_Task.msiPrincipalId'] ]
+    strategy:
+        runOnce:
+          deploy:
+            steps:
+              - checkout: self
+              - template: ../.templates/pipeline.steps.artifact.yml
+                parameters:
+                  moduleName: '$(rbacModuleName)'
+                  moduleVersion: '$(rbacModuleVersion)'
+              - task: AzurePowerShell@4
+                displayName: 'Assign [$(userAssignedIdentityName)] as subscription contributor via [$(serviceConnection)].'
+                name: Deploy_ImagingSubscriptionOwnerAssignment_Task
+                inputs:
+                  azureSubscription: $(serviceConnection)
+                  ScriptType: InlineScript
+                  inline: |
+                    Write-Verbose "Load function" -Verbose
+                    . '$(Build.SourcesDirectory)/$(orchestrationFunctionsPath)/GeneralDeployment/Invoke-GeneralDeployment.ps1'
+                  
+                    $parameterFilePath = '$(rgFolderPath)/Parameters/imagingSubscriptionContributorAssignment.parameters.json'
+                    $functionInput = @{
+                      location          = '$(location)'
+                      modulePackagePath = Join-Path '$(Build.SourcesDirectory)/$(packagePath)' '$(rbacModuleName)'
+                      parameterFilePath = $parameterFilePath
+                    }
+
+                    $parameterObjects += @{
+                      roleAssignments =   @{
+                        roleDefinitionIdOrName = "Contributor"
+                        principalIds           = @( '$(msiPrincipalId)' )
+                      }
+                    }
+            
+                    $functionInput += @{
+                      optionalParameters = $parameterObjects
+                    }
+
+                    Write-Verbose "Invoke task with" -Verbose
+                    ConvertTo-Json $functionInput -Depth 3
+                    #$functionInput.Keys | ForEach-Object { Write-Verbose ("PARAMETER: `t'{0}' with value '{1}'" -f $_, $functionInput[$_]) -Verbose }
+
+                    Invoke-GeneralDeployment @functionInput -Verbose
+                  errorActionPreference: stop
+                  azurePowerShellVersion: LatestVersion
+                enabled: true
+              - task: AzurePowerShell@4
+                displayName: 'Assign [$(userAssignedIdentityName)] as Storage Blob Data Reader on [$(resourcegroupname)] via [$(serviceConnection)]'
+                name: Deploy_Imaging_ResourceGroupBlobReaderAssignment_Task
+                inputs:
+                  azureSubscription: $(serviceConnection)
+                  ScriptType: InlineScript
+                  inline: |
+                    Write-Verbose "Load function" -Verbose
+                    . '$(Build.SourcesDirectory)/$(orchestrationFunctionsPath)/GeneralDeployment/Invoke-GeneralDeployment.ps1'
+                  
+                    $parameterFilePath = '$(rgFolderPath)/Parameters/StorageAccountBlobReaderAssignment.parameters.json'
+                    $functionInput = @{
+                      location          = '$(location)'
+                      modulePackagePath = Join-Path '$(Build.SourcesDirectory)/$(packagePath)' '$(rbacModuleName)'
+                      parameterFilePath = $parameterFilePath
+                    }
+
+                    $parameterObjects += @{
+                      resourceGroupName = '$(resourcegroupname)'
+                    }
+
+                    $parameterObjects += @{
+                      roleAssignments =   @{
+                        roleDefinitionIdOrName = "Storage Blob Data Reader"
+                        principalIds           = @( '$(msiPrincipalId)' )
+                      }
+                    }
+            
+                    $functionInput += @{
+                      optionalParameters = $parameterObjects
+                    }
+
+                    Write-Verbose "Invoke task with" -Verbose
+                    ConvertTo-Json $functionInput -Depth 3
+                    #$functionInput.Keys | ForEach-Object { Write-Verbose ("PARAMETER: `t'{0}' with value '{1}'" -f $_, $functionInput[$_]) -Verbose }
+
+                    Invoke-GeneralDeployment @functionInput -Verbose
+                  errorActionPreference: stop
+                  azurePowerShellVersion: LatestVersion
+                enabled: true 
+
+  ## Shared Image Gallery
+  - deployment: Deploy_SharedImageGallery
+    dependsOn:
+    - ${{ if eq(variables['enableJobDeployResourceGroup'], true) }}:
+      - Deploy_Imaging_ResourceGroup
+    environment: Production
+    condition: |
+      and (
+        not(canceled()),
+        eq(variables['enableJobDeploySharedImageGallery'], true),
+        in(dependencies.Deploy_Imaging_ResourceGroup.result, '', 'Succeeded', 'Skipped')
+      )
+    timeoutInMinutes: 120
+    pool:
+      ${{ if ne(variables.vmImage, '') }}:
+          vmImage: $(vmImage)
+      ${{ if ne(variables.poolName, '') }}:
+          name: $(poolName)
+    strategy:
+        runOnce:
+          deploy:
+            steps:
+              - checkout: self
+              - template: ../.templates/pipeline.steps.artifact.yml
+                parameters:
+                  moduleName: '$(sharedImageGalleryModuleName)'
+                  moduleVersion: '$(sharedImageGalleryModuleVersion)'
+              - task: AzurePowerShell@4
+                displayName: 'Deploy Shared Image Gallery to [$(resourcegroupname)] via [$(serviceConnection)]'
+                name: Deploy_SharedImageGallery_Task
+                inputs:
+                  azureSubscription: $(serviceConnection)
+                  ScriptType: InlineScript
+                  inline: |
+                    Write-Verbose "Load function" -Verbose
+                    . '$(Build.SourcesDirectory)/$(orchestrationFunctionsPath)/GeneralDeployment/Invoke-GeneralDeployment.ps1'
+
+                    $parameterFilePath = '$(rgFolderPath)/Parameters/sharedImageGallery.parameters.json'
+                    $functionInput = @{
+                      resourcegroupName = '$(resourcegroupname)'
+                      modulePackagePath = Join-Path '$(Build.SourcesDirectory)/$(packagePath)' '$(sharedImageGalleryModuleName)'
+                      parameterFilePath = $parameterFilePath
+                    }
+
+                    Write-Verbose "Invoke task with" -Verbose
+                    $functionInput.Keys | ForEach-Object { Write-Verbose ("PARAMETER: `t'{0}' with value '{1}'" -f $_, $functionInput[$_]) -Verbose }
+
+                    Invoke-GeneralDeployment @functionInput -Verbose
+                  errorActionPreference: stop
+                  azurePowerShellVersion: LatestVersion
+                enabled: true
+
+  ## Shared Image Definitions
+  - deployment: Deploy_SharedImageDefinitions
+    dependsOn:
+    - ${{ if eq(variables['enableJobDeployResourceGroup'], true) }}:
+      - Deploy_Imaging_ResourceGroup
+    - ${{ if eq(variables['enableJobDeploySharedImageGallery'], true) }}:
+      - Deploy_SharedImageGallery
+    environment: Production
+    condition: |
+      and (
+        not(canceled()),
+        eq(variables['enableJobDeploySharedImageDefinition'], true),
+        in(dependencies.Deploy_Imaging_ResourceGroup.result, '', 'Succeeded', 'Skipped'),
+        in(dependencies.Deploy_SharedImageGallery.result, '', 'Succeeded', 'Skipped')
+      )
+    timeoutInMinutes: 120
+    pool:
+      ${{ if ne(variables.vmImage, '') }}:
+          vmImage: $(vmImage)
+      ${{ if ne(variables.poolName, '') }}:
+          name: $(poolName)
+    strategy:
+        runOnce:
+          deploy:
+            steps:
+              - checkout: self
+              - template: ../.templates/pipeline.steps.artifact.yml
+                parameters:
+                  moduleName: '$(sharedImageDefinitionModuleName)'
+                  moduleVersion: '$(sharedImageDefinitionModuleVersion)'
+              - task: AzurePowerShell@4
+                displayName: 'Deploy Shared Image Definitions to [$(resourcegroupname)] via [$(serviceConnection)]'
+                name: Deploy_SharedImageDefinitions_Task
+                inputs:
+                  azureSubscription: $(serviceConnection)
+                  ScriptType: InlineScript
+                  inline: |
+                    Write-Verbose "Load function" -Verbose
+                    . '$(Build.SourcesDirectory)/$(orchestrationFunctionsPath)/GeneralDeployment/Invoke-GeneralDeployment.ps1'
+
+                    $ParameterFiles = Get-ChildItem -path '$(rgFolderPath)/Parameters' -file -Filter '*sharedImageDefinition.parameters.json'
+                    ForEach ($ParameterFile in $ParameterFiles) {
+                        $ParameterFilePath = $ParameterFile.FullName
+                        $functionInput = @{
+                            resourcegroupName = '$(resourcegroupname)'
+                            modulePackagePath = Join-Path '$(Build.SourcesDirectory)/$(packagePath)' '$(sharedImageDefinitionModuleName)'
+                            parameterFilePath = $parameterFilePath
+                          }
+                          
+                          Write-Verbose "Invoke task with" -Verbose
+                          $functionInput.Keys | ForEach-Object { Write-Verbose ("PARAMETER: `t'{0}' with value '{1}'" -f $_, $functionInput[$_]) -Verbose }
+                          
+                          Invoke-GeneralDeployment @functionInput -Verbose
+                    }
+                  errorActionPreference: stop
+                  azurePowerShellVersion: LatestVersion
+                enabled: true
+
+  ## Admin Image template
+  - deployment: Create_New_Admin_ImageVersion
+    dependsOn:
+    - ${{ if eq(variables['enableJobDeployResourceGroup'], true) }}:
+      - Deploy_Imaging_ResourceGroup
+    - ${{ if eq(variables['enableJobDeploySharedImageDefinition'], true) }}:
+      - Deploy_SharedImageDefinitions
+    - ${{ if eq(variables['enableJobUserAssignedIdentityRoleAssignments'], true) }}:
+      - Deploy_UserAssignedIdentity_RoleAssignments
+    - ${{ if eq(variables['enableJobDeployImageAssetsStorageAccount'], true) }}:
+      - Deploy_ImageAssets_StorageAccount      
+    environment: Production
+    condition: |
+      and (
+        not(canceled()),
+        eq(variables['enableJobStartNewAdminImageBuild'], true),
+        in(dependencies.Deploy_Imaging_ResourceGroup.result, '', 'Succeeded', 'Skipped'),
+        in(dependencies.Deploy_SharedImageDefinitions.result, '', 'Succeeded', 'Skipped'),
+        in(dependencies.Deploy_UserAssignedIdentity_RoleAssignments.result, '', 'Succeeded', 'Skipped'),
+        in(dependencies.Deploy_ImageAssets_StorageAccount.result, '', 'Succeeded', 'Skipped')
+      )
+    timeoutInMinutes: 120
+    pool:
+      ${{ if ne(variables.vmImage, '') }}:
+          vmImage: $(vmImage)
+      ${{ if ne(variables.poolName, '') }}:
+          name: $(poolName)
+    strategy:
+        runOnce:
+          deploy:
+            steps:
+              - checkout: self
+              - template: ../.templates/pipeline.steps.artifact.yml
+                parameters:
+                  moduleName: '$(imageTemplateModuleName)'
+                  moduleVersion: '$(imageTemplateModuleVersion)'
+              - task: AzurePowerShell@4
+                displayName: 'Trigger [Admin Image Template] pre-deployment tasks'
+                name: Deploy_AdminImagePreDeployment_Task
+                inputs:
+                  azureSubscription: $(serviceConnection)
+                  ScriptType: InlineScript
+                  inline: |
+                    Write-Verbose "Load functions" -Verbose
+                    . '$(Build.SourcesDirectory)/$(orchestrationFunctionsPath)/GeneralDeployment/Add-CustomParameters.ps1'
+                    . '$(Build.SourcesDirectory)/$(orchestrationFunctionsPath)/Storage/StorageAccountHelperFunctions.ps1'
+
+                    # Populate some directory paths and use template name to specify customization script name
+
+                    $WVDUploadsPath = Join-Path '$(Build.SourcesDirectory)' '$(wvdUploadsPath)'
+                    $StorageAccountName = '$(wvdImageAssetsStorageAccount)'
+                    $resourcegroupName = '$(resourcegroupname)'
+                    $targetContainer = '$(targetContainer)'
+                    $parameterFilePath = '$(rgFolderPath)/Parameters/Admin_ImageTemplate.parameters.json'
+                      $filename = split-path $parameterFilePath -leaf
+                      $filename = $filename -ireplace "template.parameters.json","Customization.ps1"
+                    $ImageCustomizationScript = Join-Path "$wvdUploadsPath" "WVDScripts\$filename"
+                    
+                    $functionInput = @{
+                      ParameterFilePath          = $parameterFilePath
+                      ImageCustomizationScript   = $ImageCustomizationScript
+                      StorageAccountName         = $StorageAccountName
+                      TargetContainer            = $TargetContainer       
+                    }
+
+                    Write-Verbose "Invoke task with" -Verbose
+                    $functionInput.Keys | ForEach-Object { Write-Verbose ("PARAMETER: `t'{0}' with value '{1}'" -f $_, $functionInput[$_]) -Verbose }
+
+                    # Set SAS keys in parameterfile and ImageCustomizationScript. Must be done when image template is deployed due to time limit on SAS token.
+                    Write-Output "Adding SAS tokens to parameter file and master customization script."
+                    # Add blob specific SAS to parameters file for each file downloaded via file customizer.
+                    Set-BlobSASInFile -filePath $parameterFilePath -Verbose
+                    # Update storageaccount properties in image customization script from pipeline variables.
+                    Set-ContainerSASInFile -filePath $ImageCustomizationScript -StorageAccount $storageAccountName -container $targetContainer
+                    $Content = Get-Content -Path $ImageCustomizationScript
+                    $Content = $Content -ireplace "<storageaccount>", "$storageaccountname"
+                    $content = $Content -ireplace "<container>", "$targetcontainer"
+                    $content | set-Content -Path $ImageCustomizationScript 
+                    # Upload updated ImageCustomization Script to Storage Account
+                    Write-Output "Updating master image customization script in storage account."
+                    Add-ContentToBlobContainer -StorageAccountName $storageaccountname -ResourceGroupName $resourcegroupname -contentdirectories $ImageCustomizationScript -targetcontainer $targetContainer
+                  errorActionPreference: stop
+                  azurePowerShellVersion: LatestVersion
+                enabled: true
+              - task: AzurePowerShell@4
+                displayName: 'Deploy [Admin Image Template] to [$(resourcegroupname)] via [$(serviceConnection)]'
+                name: Deploy_AdminImageTemplate_Task
+                inputs:
+                  azureSubscription: $(serviceConnection)
+                  ScriptType: InlineScript
+                  inline: |
+                    Write-Verbose "Load function" -Verbose
+                    . '$(Build.SourcesDirectory)/$(orchestrationFunctionsPath)/GeneralDeployment/Invoke-GeneralDeployment.ps1'
+                    . '$(Build.SourcesDirectory)/$(orchestrationFunctionsPath)/GeneralDeployment/Add-CustomParameters.ps1'
+
+                    $parameterFilePath = '$(rgFolderPath)/Parameters/Admin_ImageTemplate.parameters.json'
+
+                    $functionInput = @{
+                      location                  = '$(location)'
+                      resourcegroupName         = '$(resourcegroupname)'
+                      modulePackagePath         = Join-Path '$(Build.SourcesDirectory)/$(packagePath)' '$(imageTemplateModuleName)'
+                      parameterFilePath         = $parameterFilePath
+                    }
+
+                    Write-Verbose "Invoke task with" -Verbose
+                    $functionInput.Keys | ForEach-Object { Write-Verbose ("PARAMETER: `t'{0}' with value '{1}'" -f $_, $functionInput[$_]) -Verbose }
+                    
+                    Invoke-GeneralDeployment @functionInput -Verbose
+                  errorActionPreference: stop
+                  azurePowerShellVersion: LatestVersion
+                enabled: true
+              ## Trigger building new image
+              - task: AzurePowerShell@4
+                displayName: "Trigger [Admin Image Template] post-deployment"
+                name: PostDeploy_AdminImageTemplate_Task
+                inputs:
+                  azureSubscription: $(serviceConnection)
+                  ScriptType: InlineScript
+                  inline: |
+                    Write-Verbose "Load function" -Verbose
+                    . '$(Build.SourcesDirectory)/$(orchestrationFunctionsPath)/GeneralDeployment/Invoke-ImageTemplatesPostDeployment.ps1'
+
+                    $functionInput = @{
+                      orchestrationFunctionsPath     = '$(Build.SourcesDirectory)/$(orchestrationFunctionsPath)'   
+                      ResourceGroupName              = '$(resourcegroupname)'
+                      ImageTemplateName              = '$(Deploy_AdminImageTemplate_Task.imageTemplateName)' # template deployment output
+                      synchronouslyWaitForImageBuild = [System.Convert]::ToBoolean('$(synchronouslyWaitForImageBuild)')
+                    }
+
+                    Write-Verbose "Invoke task with" -Verbose
+                    $functionInput.Keys | ForEach-Object { Write-Verbose ("PARAMETER: `t'{0}' with value '{1}'" -f $_, $functionInput[$_]) -Verbose }
+
+                    Invoke-ImageTemplatesPostDeployment @functionInput -Verbose
+                  errorActionPreference: stop
+                  azurePowerShellVersion: LatestVersion
+                enabled: true
+
+  ## CAD (Hexagon Software) Image template
+  - deployment: Create_New_CAD_ImageVersion
+    dependsOn:
+    - ${{ if eq(variables['enableJobDeployResourceGroup'], true) }}:
+      - Deploy_Imaging_ResourceGroup
+    - ${{ if eq(variables['enableJobDeploySharedImageDefinition'], true) }}:
+      - Deploy_SharedImageDefinitions
+    - ${{ if eq(variables['enableJobUserAssignedIdentityRoleAssignments'], true) }}:
+      - Deploy_UserAssignedIdentity_RoleAssignments
+    - ${{ if eq(variables['enableJobDeployImageAssetsStorageAccount'], true) }}:
+      - Deploy_ImageAssets_StorageAccount      
+    environment: Production
+    condition: |
+      and (
+        not(canceled()),
+        eq(variables['enableJobStartNewCADImageBuild'], true),
+        in(dependencies.Deploy_Imaging_ResourceGroup.result, '', 'Succeeded', 'Skipped'),
+        in(dependencies.Deploy_SharedImageDefinitions.result, '', 'Succeeded', 'Skipped'),
+        in(dependencies.Deploy_UserAssignedIdentity_RoleAssignments.result, '', 'Succeeded', 'Skipped'),
+        in(dependencies.Deploy_ImageAssets_StorageAccount.result, '', 'Succeeded', 'Skipped')
+      )
+    timeoutInMinutes: 120
+    pool:
+      ${{ if ne(variables.vmImage, '') }}:
+          vmImage: $(vmImage)
+      ${{ if ne(variables.poolName, '') }}:
+          name: $(poolName)
+    strategy:
+        runOnce:
+          deploy:
+            steps:
+              - checkout: self
+              - template: ../.templates/pipeline.steps.artifact.yml
+                parameters:
+                  moduleName: '$(imageTemplateModuleName)'
+                  moduleVersion: '$(imageTemplateModuleVersion)'
+              - task: AzurePowerShell@4
+                displayName: 'Trigger [CAD Image Template] pre-deployment tasks'
+                name: Deploy_CADImagePreDeployment_Task
+                inputs:
+                  azureSubscription: $(serviceConnection)
+                  ScriptType: InlineScript
+                  inline: |
+                    Write-Verbose "Load functions" -Verbose
+                    . '$(Build.SourcesDirectory)/$(orchestrationFunctionsPath)/GeneralDeployment/Add-CustomParameters.ps1'
+                    . '$(Build.SourcesDirectory)/$(orchestrationFunctionsPath)/Storage/StorageAccountHelperFunctions.ps1'
+
+                    # Populate some directory paths and use template name to specify customization script name
+
+                    $WVDUploadsPath = Join-Path '$(Build.SourcesDirectory)' '$(wvdUploadsPath)'
+                    $StorageAccountName = '$(wvdImageAssetsStorageAccount)'
+                    $resourcegroupName = '$(resourcegroupname)'
+                    $targetContainer = '$(targetContainer)'
+                    $parameterFilePath = '$(rgFolderPath)/Parameters/CAD_ImageTemplate.parameters.json'
+                      $filename = split-path $parameterFilePath -leaf
+                      $filename = $filename -ireplace "template.parameters.json","Customization.ps1"
+                    $ImageCustomizationScript = Join-Path "$wvdUploadsPath" "WVDScripts\$filename"
+                    
+                    $functionInput = @{
+                      ParameterFilePath          = $parameterFilePath
+                      ImageCustomizationScript   = $ImageCustomizationScript
+                      StorageAccountName         = $StorageAccountName
+                      TargetContainer            = $TargetContainer       
+                    }
+
+                    Write-Verbose "Invoke task with" -Verbose
+                    $functionInput.Keys | ForEach-Object { Write-Verbose ("PARAMETER: `t'{0}' with value '{1}'" -f $_, $functionInput[$_]) -Verbose }
+
+                    # Set SAS keys in parameterfile and ImageCustomizationScript. Must be done when image template is deployed due to time limit on SAS token.
+                    Write-Output "Adding SAS tokens to parameter file and master customization script."
+                    # Add blob specific SAS to parameters file for each file downloaded via file customizer.
+                    Set-BlobSASInFile -filePath $parameterFilePath -Verbose
+                    # Update storageaccount properties in image customization script from pipeline variables.
+                    Set-ContainerSASInFile -filePath $ImageCustomizationScript -StorageAccount $storageAccountName -container $targetContainer
+                    $Content = Get-Content -Path $ImageCustomizationScript
+                    $Content = $Content -ireplace "<storageaccount>", "$storageaccountname"
+                    $content = $Content -ireplace "<container>", "$targetcontainer"
+                    $content | set-Content -Path $ImageCustomizationScript 
+                    # Upload updated ImageCustomization Script to Storage Account
+                    Write-Output "Updating master image customization script in storage account."
+                    Add-ContentToBlobContainer -StorageAccountName $storageaccountname -ResourceGroupName $resourcegroupname -contentdirectories $ImageCustomizationScript -targetcontainer $targetContainer
+                  errorActionPreference: stop
+                  azurePowerShellVersion: LatestVersion
+                enabled: true
+              - task: AzurePowerShell@4
+                displayName: 'Deploy [CAD Image Template] to [$(resourcegroupname)] via [$(serviceConnection)]'
+                name: Deploy_CADImageTemplate_Task
+                inputs:
+                  azureSubscription: $(serviceConnection)
+                  ScriptType: InlineScript
+                  inline: |
+                    Write-Verbose "Load function" -Verbose
+                    . '$(Build.SourcesDirectory)/$(orchestrationFunctionsPath)/GeneralDeployment/Invoke-GeneralDeployment.ps1'
+                    . '$(Build.SourcesDirectory)/$(orchestrationFunctionsPath)/GeneralDeployment/Add-CustomParameters.ps1'
+
+                    $parameterFilePath = '$(rgFolderPath)/Parameters/CAD_ImageTemplate.parameters.json'
+
+                    $functionInput = @{
+                      location                  = '$(location)'
+                      resourcegroupName         = '$(resourcegroupname)'
+                      modulePackagePath         = Join-Path '$(Build.SourcesDirectory)/$(packagePath)' '$(imageTemplateModuleName)'
+                      parameterFilePath         = $parameterFilePath
+                    }
+
+                    Write-Verbose "Invoke task with" -Verbose
+                    $functionInput.Keys | ForEach-Object { Write-Verbose ("PARAMETER: `t'{0}' with value '{1}'" -f $_, $functionInput[$_]) -Verbose }
+                    
+                    Invoke-GeneralDeployment @functionInput -Verbose
+                  errorActionPreference: stop
+                  azurePowerShellVersion: LatestVersion
+                enabled: true
+              ## Trigger building new image
+              - task: AzurePowerShell@4
+                displayName: "Trigger [CAD Image Template] post-deployment"
+                name: PostDeploy_CADImageTemplate_Task
+                inputs:
+                  azureSubscription: $(serviceConnection)
+                  ScriptType: InlineScript
+                  inline: |
+                    Write-Verbose "Load function" -Verbose
+                    . '$(Build.SourcesDirectory)/$(orchestrationFunctionsPath)/GeneralDeployment/Invoke-ImageTemplatesPostDeployment.ps1'
+
+                    $functionInput = @{
+                      orchestrationFunctionsPath     = '$(Build.SourcesDirectory)/$(orchestrationFunctionsPath)'   
+                      ResourceGroupName              = '$(resourcegroupname)'
+                      ImageTemplateName              = '$(Deploy_CADImageTemplate_Task.imageTemplateName)' # template deployment output
+                      synchronouslyWaitForImageBuild = [System.Convert]::ToBoolean('$(synchronouslyWaitForImageBuild)')
+                    }
+
+                    Write-Verbose "Invoke task with" -Verbose
+                    $functionInput.Keys | ForEach-Object { Write-Verbose ("PARAMETER: `t'{0}' with value '{1}'" -f $_, $functionInput[$_]) -Verbose }
+
+                    Invoke-ImageTemplatesPostDeployment @functionInput -Verbose
+                  errorActionPreference: stop
+                  azurePowerShellVersion: LatestVersion
+                enabled: true
+
+  ## Dev (Hexagon Software) Image template
+  - deployment: Create_New_Dev_ImageVersion
+    dependsOn:
+    - ${{ if eq(variables['enableJobDeployResourceGroup'], true) }}:
+      - Deploy_Imaging_ResourceGroup
+    - ${{ if eq(variables['enableJobDeploySharedImageDefinition'], true) }}:
+      - Deploy_SharedImageDefinitions
+    - ${{ if eq(variables['enableJobUserAssignedIdentityRoleAssignments'], true) }}:
+      - Deploy_UserAssignedIdentity_RoleAssignments
+    - ${{ if eq(variables['enableJobDeployImageAssetsStorageAccount'], true) }}:
+      - Deploy_ImageAssets_StorageAccount      
+    environment: Production
+    condition: |
+      and (
+        not(canceled()),
+        eq(variables['enableJobStartNewDevImageBuild'], true),
+        in(dependencies.Deploy_Imaging_ResourceGroup.result, '', 'Succeeded', 'Skipped'),
+        in(dependencies.Deploy_SharedImageDefinitions.result, '', 'Succeeded', 'Skipped'),
+        in(dependencies.Deploy_UserAssignedIdentity_RoleAssignments.result, '', 'Succeeded', 'Skipped'),
+        in(dependencies.Deploy_ImageAssets_StorageAccount.result, '', 'Succeeded', 'Skipped')
+      )
+    timeoutInMinutes: 120
+    pool:
+      ${{ if ne(variables.vmImage, '') }}:
+          vmImage: $(vmImage)
+      ${{ if ne(variables.poolName, '') }}:
+          name: $(poolName)
+    strategy:
+        runOnce:
+          deploy:
+            steps:
+              - checkout: self
+              - template: ../.templates/pipeline.steps.artifact.yml
+                parameters:
+                  moduleName: '$(imageTemplateModuleName)'
+                  moduleVersion: '$(imageTemplateModuleVersion)'
+              - task: AzurePowerShell@4
+                displayName: 'Trigger [Dev Image Template] pre-deployment tasks'
+                name: Deploy_DevImagePreDeployment_Task
+                inputs:
+                  azureSubscription: $(serviceConnection)
+                  ScriptType: InlineScript
+                  inline: |
+                    Write-Verbose "Load functions" -Verbose
+                    . '$(Build.SourcesDirectory)/$(orchestrationFunctionsPath)/GeneralDeployment/Add-CustomParameters.ps1'
+                    . '$(Build.SourcesDirectory)/$(orchestrationFunctionsPath)/Storage/StorageAccountHelperFunctions.ps1'
+
+                    # Populate some directory paths and use template name to specify customization script name
+
+                    $WVDUploadsPath = Join-Path '$(Build.SourcesDirectory)' '$(wvdUploadsPath)'
+                    $StorageAccountName = '$(wvdImageAssetsStorageAccount)'
+                    $resourcegroupName = '$(resourcegroupname)'
+                    $targetContainer = '$(targetContainer)'
+                    $parameterFilePath = '$(rgFolderPath)/Parameters/Dev_ImageTemplate.parameters.json'
+                      $filename = split-path $parameterFilePath -leaf
+                      $filename = $filename -ireplace "template.parameters.json","Customization.ps1"
+                    $ImageCustomizationScript = Join-Path "$wvdUploadsPath" "WVDScripts\$filename"
+                    
+                    $functionInput = @{
+                      ParameterFilePath          = $parameterFilePath
+                      ImageCustomizationScript   = $ImageCustomizationScript
+                      StorageAccountName         = $StorageAccountName
+                      TargetContainer            = $TargetContainer       
+                    }
+
+                    Write-Verbose "Invoke task with" -Verbose
+                    $functionInput.Keys | ForEach-Object { Write-Verbose ("PARAMETER: `t'{0}' with value '{1}'" -f $_, $functionInput[$_]) -Verbose }
+
+                    # Set SAS keys in parameterfile and ImageCustomizationScript. Must be done when image template is deployed due to time limit on SAS token.
+                    Write-Output "Adding SAS tokens to parameter file and master customization script."
+                    # Add blob specific SAS to parameters file for each file downloaded via file customizer.
+                    Set-BlobSASInFile -filePath $parameterFilePath -Verbose
+                    # Update storageaccount properties in image customization script from pipeline variables.
+                    Set-ContainerSASInFile -filePath $ImageCustomizationScript -StorageAccount $storageAccountName -container $targetContainer
+                    $Content = Get-Content -Path $ImageCustomizationScript
+                    $Content = $Content -ireplace "<storageaccount>", "$storageaccountname"
+                    $content = $Content -ireplace "<container>", "$targetcontainer"
+                    $content | set-Content -Path $ImageCustomizationScript 
+                    # Upload updated ImageCustomization Script to Storage Account
+                    Write-Output "Updating master image customization script in storage account."
+                    Add-ContentToBlobContainer -StorageAccountName $storageaccountname -ResourceGroupName $resourcegroupname -contentdirectories $ImageCustomizationScript -targetcontainer $targetContainer
+                  errorActionPreference: stop
+                  azurePowerShellVersion: LatestVersion
+                enabled: true
+              - task: AzurePowerShell@4
+                displayName: 'Deploy [Dev Image Template] to [$(resourcegroupname)] via [$(serviceConnection)]'
+                name: Deploy_DevImageTemplate_Task
+                inputs:
+                  azureSubscription: $(serviceConnection)
+                  ScriptType: InlineScript
+                  inline: |
+                    Write-Verbose "Load function" -Verbose
+                    . '$(Build.SourcesDirectory)/$(orchestrationFunctionsPath)/GeneralDeployment/Invoke-GeneralDeployment.ps1'
+                    . '$(Build.SourcesDirectory)/$(orchestrationFunctionsPath)/GeneralDeployment/Add-CustomParameters.ps1'
+
+                    $parameterFilePath = '$(rgFolderPath)/Parameters/Dev_ImageTemplate.parameters.json'
+
+                    $functionInput = @{
+                      location                  = '$(location)'
+                      resourcegroupName         = '$(resourcegroupname)'
+                      modulePackagePath         = Join-Path '$(Build.SourcesDirectory)/$(packagePath)' '$(imageTemplateModuleName)'
+                      parameterFilePath         = $parameterFilePath
+                    }
+
+                    Write-Verbose "Invoke task with" -Verbose
+                    $functionInput.Keys | ForEach-Object { Write-Verbose ("PARAMETER: `t'{0}' with value '{1}'" -f $_, $functionInput[$_]) -Verbose }
+                    
+                    Invoke-GeneralDeployment @functionInput -Verbose
+                  errorActionPreference: stop
+                  azurePowerShellVersion: LatestVersion
+                enabled: true
+              ## Trigger building new image
+              - task: AzurePowerShell@4
+                displayName: "Trigger module [$(imageTemplateModuleName)] post-deployment"
+                name: PostDeploy_DevImageTemplate_Task
+                inputs:
+                  azureSubscription: $(serviceConnection)
+                  ScriptType: InlineScript
+                  inline: |
+                    Write-Verbose "Load function" -Verbose
+                    . '$(Build.SourcesDirectory)/$(orchestrationFunctionsPath)/GeneralDeployment/Invoke-ImageTemplatesPostDeployment.ps1'
+
+                    $functionInput = @{
+                      orchestrationFunctionsPath     = '$(Build.SourcesDirectory)/$(orchestrationFunctionsPath)'   
+                      ResourceGroupName              = '$(resourcegroupname)'
+                      ImageTemplateName              = '$(Deploy_DevImageTemplate_Task.imageTemplateName)' # template deployment output
+                      synchronouslyWaitForImageBuild = [System.Convert]::ToBoolean('$(synchronouslyWaitForImageBuild)')
+                    }
+
+                    Write-Verbose "Invoke task with" -Verbose
+                    $functionInput.Keys | ForEach-Object { Write-Verbose ("PARAMETER: `t'{0}' with value '{1}'" -f $_, $functionInput[$_]) -Verbose }
+
+                    Invoke-ImageTemplatesPostDeployment @functionInput -Verbose
+                  errorActionPreference: stop
+                  azurePowerShellVersion: LatestVersion
+                enabled: true

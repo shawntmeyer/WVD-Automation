@@ -1,0 +1,132 @@
+#######################################################################
+##                                NOTE                               ##
+## ------------------------------------------------------------------##
+## - These variables are used to configure the pipeline and provide  ##
+##   variables to pipeline scripts                                   ##
+## - Parameters used for resource deployments are located in the     ##
+##   parameter files in the '.\Parameters' folder                    ##
+#######################################################################
+
+variables:
+
+#############
+## GENERAL ##
+#############
+#region shared
+  orchestrationPath: Environments
+  orchestrationFunctionsPath: OrchestrationSources/SharedDeploymentFunctions
+  wvdUploadsPath: OrchestrationSources/Uploads
+  vmImage: 'ubuntu-latest'
+  poolName: ''
+  serviceConnection: 'Stardust SP Connection'
+  artifactFeedPath: '$(System.Teamproject)/Components'
+  packagePath: ModulePackages
+#endregion
+
+#region specific
+  rgFolderPath: '$(orchestrationPath)/bsd-wvd-cad-dev-hp-rg'
+  location: eastus
+#endregion
+
+#######################
+## PIPELINE CONTROLS ##
+#######################
+#region pipeline controls
+
+# Pipeline Name
+# -------------
+  pipelineName: 'WVD Dev Hostpool Deployment'
+
+# Deployed Module Specs
+# ---------------------
+  resourceGroupModuleName: ResourceGroup
+  resourceGroupModuleVersion: '*'
+
+  wvdHostPoolsModuleName: WvdHostPools
+  wvdHostPoolsModuleVersion: '*'
+
+  storageAccountModuleName: StorageAccounts
+  storageAccountModuleVersion: '*' 
+
+  wvdApplicationGroupsModuleName: WvdApplicationGroups
+  wvdApplicationGroupsModuleVersion: '*'
+  
+  virtualMachinesModuleName: VirtualMachines
+  virtualMachinesModuleVersion: '*'
+  
+  wvdApplicationsModuleName: WvdApplications 
+  wvdApplicationsModuleVersion: '*'
+  
+  wvdWorkspacesModuleName: WvdWorkspaces
+  wvdWorkspacesModuleVersion: '*'
+  
+  wvdScalingSchedulerModuleName: WvdScalingScheduler 
+  wvdScalingSchedulerModuleVersion: '*'
+
+# Jobs
+# ----
+  enableJobDeployResourceGroup: true # To enable/disable job
+  enableJobDeployHostPool: true # To enable/disable job
+  enableJobDeploySessionHosts: true # To enable/disable job
+  enableJobDeployDesktopAppGroup: true # To enable/disable job
+  enableJobDeployRemoteAppGroup01: false # To enable/disable job
+  enableJobDeployApplication: false # To enable/disable job
+  enableJobDeployWorkspace: true # To enable/disable job
+  enableJobDeployScalingScheduler: true # To enable/disable job
+  enableJobUpdateSessionHosts: true # To enable/disable job
+
+######################
+## SCRIPT VARIABLES ##
+######################
+#region script variables
+
+## ResourceGroup
+  resourceGroupName: 'bsd-wvd-cad-dev-hp-rg'
+  WorkspaceName: 'CustomerNameWVDWorkspace'
+  WorkspaceResourceGroupName: 'bsd-wvd-mgmt-eus-rg'
+  
+# Host Pool related
+# -----------------
+  HostPoolName: 'bsd-wvd-cad-dev-hp'
+
+# Storage Account related
+# -----------------------
+  wvdAssetsStorageAccount: 'bsdimageassetsstore'
+  targetContainer: 'sources'
+
+# Session Host related
+# --------------------
+  ## Custom Script Extension
+  enableCSE: false                               # To enable/disable Custom Script Extension
+  profilesStorageAccountName01: 'wvdhxgneus'  # Only needed in case CSE is enabled
+  #profilesStorageAccountName02: 'fslogixadprof02'  # Only needed in case CSE is enabled and an additional storage account is used for profile management
+
+  ## Health Check
+  sessionHostHealthTimeoutInMinutes: 15 # Maximum time for health-check script (host-pool post-deployment) to wait for the session hosts to come up healthy
+
+# Imaging
+# -------
+  ## Custom Image
+  # If a custom image reference is provided, it is picked up instead of any provided marketplace image information. If not used, MUST be set to '' (empty)
+  # Is used for the session host deployment as well as the host-pool image update process (if enabled)
+  # SharedImageGalleryImageDefinitionID: '/subscriptions/<subscriptionid>/resourceGroups/<sharedimagegalleryrg>/providers/Microsoft.Compute/galleries/<SharedImageGalleryName>/images/<ImageDefinition>'
+  SharedImageGalleryImageDefinitionID: '/subscriptions/65862f1e-947f-4dd6-bd50-319d3c84eb36/resourceGroups/bsd-imaging-rg/providers/Microsoft.Compute/galleries/CustomerNameSharedImages/images/Dev' 
+  ImageVersion: 'latest' # enter latest here or specify a version.
+
+  ## Marketplace Image
+  # Is used for the session host deployment as well as the host-pool image update process (if enabled)
+  #publisher: 'MicrosoftWindowsDesktop'
+  #offer: 'office-365'
+  #sku: '19h2-evd-o365pp'
+  #version: 'latest'
+  #imagelocation: 'EastUS' # Required if not using the 'SharedImageGalleryImageRefID' and 'version' equals 'latest'
+
+# Image Lifecycle related
+# -----------------------
+  DeleteVMDeadline: '202012312000'  # In 'yyyyMMddHHmm'. The deadline after which outdated VMs are delete 
+  LogoffDeadline: '202012102000'    # In 'yyyyMMddHHmm'. The deadline after which users are log-off by force 
+  LogOffMessageTitle: 'Warning'     # PopUp title shown to users if they are warned of an upcoming imminent log-off
+  LogOffMessageBody: 'This Session Host is begin decommissioned as part of the host pool update process. Please logoff. You may logon again immediately to receive a new session.'         # PopUp text shown to users if they are warned of an upcoming imminent log-off
+  UtcOffset: -5:00                      # Time difference to UTC. Enabled handling of different time zones.
+  LAWorkspaceName: '' #'CustomWvdLaWorkspace' # Name of an OMS workspace to send host-pool image update process logs to
+#endregion  

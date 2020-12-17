@@ -1,0 +1,64 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"vnetName": {
+			"value": "hubnet-local-vnet"
+		},
+		"vnetAddressPrefixes": {
+			"value": [
+				"10.192.144.0/20"
+			]
+		},
+		"subnets": {
+			"value": [
+				{
+					"name": "GatewaySubnet",
+					"addressPrefix": "10.192.150.0/27",
+					"networkSecurityGroupName": "",
+					"routeTableName": "hubnet-udrgw",
+					"serviceEndpoints": [],
+					"delegations": []
+				},
+				{
+					"name": "AzureBastionSubnet",
+					"addressPrefix": "10.192.150.32/27",
+					"networkSecurityGroupName": "hubnet-nsgbastion",
+					"routeTableName": "",
+					"serviceEndpoints": [],
+					"delegations": []
+				},
+				{
+					"name": "backend",
+					"addressPrefix": "10.192.144.0/28",
+					"networkSecurityGroupName": "hubnet-nsgfrontend",
+					"routeTableName": "hubnet-udrfe",
+					"serviceEndpoints": [],
+					"delegations": []
+				},
+				{
+					"name": "frontend",
+					"addressPrefix": "10.192.144.16/28",
+					"networkSecurityGroupName": "hubnet-nsgbackend",
+					"routeTableName": "hubnet-udrbe",
+					"serviceEndpoints": [],
+					"delegations": []
+				}
+			]
+		},
+		"dnsServers": {
+			"value": [
+				"10.1.128.4",
+				"10.1.128.5"
+			]
+		},
+		"ddosProtectionPlanId": {
+			"value": "/subscriptions/8629be3b-96bc-482d-a04b-ffff597c65a2/resourceGroups/network-hub-rg/providers/Microsoft.Network/ddosProtectionPlans/hubnet-ddos"
+		},
+		"tags": {
+			"value": {
+				"Demo": "HubNetwork"
+			}
+		}
+	}
+}

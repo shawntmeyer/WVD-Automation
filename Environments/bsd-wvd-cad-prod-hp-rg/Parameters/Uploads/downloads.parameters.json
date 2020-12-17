@@ -1,0 +1,8 @@
+{
+    "WVDSoftware": [
+        {
+            "Url": "https://aka.ms/fslogix_download",
+            "DestinationFilePath": "001-FSLogix/FSLogixApp.zip"
+        }
+    ]
+}

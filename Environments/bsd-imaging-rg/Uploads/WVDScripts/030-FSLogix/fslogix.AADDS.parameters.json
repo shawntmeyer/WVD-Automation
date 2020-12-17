@@ -1,0 +1,68 @@
+{
+	"fslogix": [
+		{
+			"installFSLogix": true,
+			"configureFSLogix": true,
+			"FSLogixRegistrySettings": [
+				{
+					"keyPath": "HKLM:\\Software\\FSLogix\\Profiles",
+					"keyValues": [
+						{
+							"Name": "Enabled",
+							"Type": "DWORD",
+							"Value": "1"
+						},
+						{
+							"Name": "DeleteLocalProfileWhenVHDShouldApply",
+							"Type": "DWORD",
+							"Value": "1"
+						},
+						{
+							"Name": "FlipFlopProfileDirectoryName",
+							"Type": "DWORD",
+							"Value": "1"
+						}
+					]
+				},
+				{
+					"keyPath": "HKLM:\\Software\\FSLogix\\Profiles\\ObjectSpecific\\S-1-5-21-1054180637-3074470729-391584821-1357",
+					"keyValues": [
+						{
+							"Name": "VHDLocations",
+							"Type": "MultiString",
+							"Value": "\\\\fslogixaaddsto01.file.core.windows.net\\wvdprofiles011"
+						}
+					]
+				},
+				{
+					"keyPath": "HKLM:\\Software\\FSLogix\\Profiles\\ObjectSpecific\\S-1-5-21-1054180637-3074470729-391584821-1358",
+					"keyValues": [
+						{
+							"Name": "VHDLocations",
+							"Type": "MultiString",
+							"Value": "\\\\fslogixaaddsto01.file.core.windows.net\\wvdprofiles012"
+						}
+					]
+				}
+			],
+			"FSLogixLocalGroupsSettings": [],
+			"configureNTFSPermissions": true,
+			"NTFSSettings": [
+				{
+					"fileShareStorageAccountName": "fslogixaaddsto01",
+					"fileShareName": "wvdprofiles011",
+					"domain": "cedward",
+					"targetGroup": "WVDUsersSub01",
+					"driveLetter": "X"
+				},
+				{
+					"fileShareStorageAccountName": "fslogixaaddsto01",
+					"fileShareName": "wvdprofiles012",
+					"domain": "cedward",
+					"targetGroup": "WVDUsersSub02",
+					"driveLetter": "Y"
+				}
+			]
+		}
+	]
+}

@@ -1,0 +1,24 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"azureBastionName": {
+			"value": "hubnet-bastion"
+		},
+		"vNetId": {
+			"value": "/subscriptions/8629be3b-96bc-482d-a04b-ffff597c65a2/resourceGroups/network-hub-rg/providers/Microsoft.Network/virtualNetworks/hubnet-local-vnet"
+		},
+		"azureBastionPipName": {
+			"value": "hubnet-bastionip"
+		},		
+		"publicIPPrefixId": {
+			"value": "/subscriptions/8629be3b-96bc-482d-a04b-ffff597c65a2/resourceGroups/network-hub-rg/providers/Microsoft.Network/publicIPPrefixes/hubnet-pipprefix"
+		},
+		"domainNameLabel": {
+			"value": "hubnet-basdm"
+		},
+		"tags": {
+			"value": { "Demo":"HubNetwork" }
+		}
+	}
+}

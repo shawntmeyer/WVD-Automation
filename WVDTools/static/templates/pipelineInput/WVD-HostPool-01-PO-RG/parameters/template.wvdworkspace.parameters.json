@@ -1,0 +1,42 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "workSpaceName": {
+            "value": "[workspace01Name]"
+        },
+        "appGroupResourceIds": {
+            "value": [
+                "/subscriptions/[subscriptionId]/resourceGroups/[HostPool01RGName]/providers/Microsoft.DesktopVirtualization/applicationgroups/[desAppGroup01Name]",
+                "/subscriptions/[subscriptionId]/resourceGroups/[HostPool01RGName]/providers/Microsoft.DesktopVirtualization/applicationgroups/[remAppGroup01Name]"
+            ]
+        },
+        "workspaceFriendlyName": {
+            "value": ""
+        },
+        "workspaceDescription": {
+            "value": ""
+        },
+        "diagnosticLogsRetentionInDays": {
+            "value": 365
+        },
+        "diagnosticStorageAccountId": {
+            "value": ""
+        },
+        "workspaceId": {
+            "value": ""
+        },
+        "eventHubAuthorizationRuleId": {
+            "value": ""
+        },
+        "eventHubName": {
+            "value": ""
+        },
+        "lockForDeletion": {
+            "value": false
+        },
+        "tags": {
+            "value": { }
+        }
+    }
+}

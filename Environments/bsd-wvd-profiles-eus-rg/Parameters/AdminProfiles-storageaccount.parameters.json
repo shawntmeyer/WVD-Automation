@@ -1,0 +1,37 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "storageAccountName": {
+      "value": "wvdadmineus"
+    },
+    "storageAccountKind": {
+      "value": "StorageV2"
+    },
+    "storageAccountSku": {
+      "value": "Standard_LRS"
+    },
+    "storageAccountAccessTier": {
+      "value": "Hot"
+    },
+    "minimumTlsVersion": {
+      "value": "TLS1_2"
+    },
+    "fileShares": {
+      "value": [
+        {
+          "name": "fslogix",
+          "shareQuota": "2048",
+          "roleAssignments": [
+            {
+              "roleDefinitionIdOrName": "Storage File Data SMB Share Elevated Contributor",
+              "principalIds": [
+                "c3544243-05eb-48a6-8790-92d608dc9166" // WVD - Admins
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

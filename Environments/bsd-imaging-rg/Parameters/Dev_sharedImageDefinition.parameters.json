@@ -1,0 +1,61 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "imageDefinitionName": {
+            "value": "Dev"
+        },
+        "galleryName": {
+            "value": "CustomerNameSharedImages"
+        },
+        "osType": {
+            "value": "Windows"
+        },
+        "osState": {
+            "value": "Generalized"
+        },
+        "publisher": {
+            "value": "CustomerNameIT"
+        },
+        "offer": {
+            "value": "Windows10"
+        },
+        "sku": {
+            "value": "Dev"
+        },
+        "minRecommendedvCPUs": {
+            "value": 2
+        },
+        "maxRecommendedvCPUs": {
+            "value": 8
+        },
+        "minRecommendedMemory": {
+            "value": 4
+        },
+        "maxRecommendedMemory": {
+            "value": 16
+        },
+        "hyperVGeneration": {
+            "value": "V1"
+        },
+        "imageDefinitionDescription": {
+            "value": "This image contains the software required by the Dispatchers, Supervisors, and Admins for the CAD system."
+        },
+        "eula": {
+            "value": ""
+        },
+        "privacyStatementUri": {
+            "value": ""
+        },
+        "releaseNoteUri": {
+            "value": ""
+        },
+        "endOfLife": {
+            "value": ""
+        },
+        "excludedDiskTypes": {
+            "value": [
+            ]
+        }
+    }
+}

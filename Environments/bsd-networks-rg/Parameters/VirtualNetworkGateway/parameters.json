@@ -1,0 +1,45 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"virtualNetworkGatewayName": {
+			"value": "hubnet-vpn"
+		},
+		"gatewayPipName": {
+			"value": [
+				"hubnet-pipone",
+				"hubnet-piptwo"
+			]
+		},
+		"publicIPPrefixId": {
+			"value": "/subscriptions/8629be3b-96bc-482d-a04b-ffff597c65a2/resourceGroups/network-hub-rg/providers/Microsoft.Network/publicIPPrefixes/hubnet-pipprefix"
+		},
+		"domainNameLabel": {
+			"value": [
+				"hubnet-pipone",
+				"hubnet-piptwo"
+			]
+		},
+		"virtualNetworkGatewayType": {
+			"value": "Vpn"
+		},
+		"virtualNetworkGatewaySku": {
+			"value": "VpnGw3AZ"
+		},
+		"vpnType": {
+			"value": "RouteBased"
+		},
+		"activeActive": {
+			"value": true
+		},
+		"asn": {
+			"value": 65122
+		},
+		"vNetId": {
+			"value": "/subscriptions/8629be3b-96bc-482d-a04b-ffff597c65a2/resourceGroups/network-hub-rg/providers/Microsoft.Network/virtualNetworks/hubnet-local-vnet"
+		},
+		"tags": {
+			"value": { "Demo":"HubNetwork" }
+		}
+	}
+}

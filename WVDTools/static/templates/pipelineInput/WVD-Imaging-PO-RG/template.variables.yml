@@ -1,0 +1,85 @@
+#######################################################################
+##                                NOTE                               ##
+## ------------------------------------------------------------------##
+## - These variables are used to configure the pipeline and provide  ##
+##   variables to pipeline scripts                                   ##
+## - Parameters used for resource deployments are located in the     ##
+##   parameter files in the '.\Parameters' folder                    ##
+#######################################################################
+
+variables:
+
+#############
+## GENERAL ##
+#############
+#region shared
+  orchestrationPath: [orchestrationPath] 
+  orchestrationFunctionsPath: [orchestrationFunctionsPath]
+  modulePath: Modules/$(moduleName)/$(moduleVersion)
+  vmImage: [vmImage]
+  poolName: [poolName]
+  componentStorageContainerName: [componentStorageContainerName]
+  serviceConnection: [serviceConnectionName]
+  componentStorageAccountSubscriptionId: [subscriptionId]
+  componentStorageAccountName: [componentStorageAccountName]
+#endregion
+
+#region specific
+  rgFolderPath: '$(orchestrationPath)/[ImagingRGName]' # Change this to RG name at the end
+  location: [PrimaryResourceLocation]
+  secondaryLocation: [SecondaryResourceLocation] # for image template as francecentral cannot host imagetemplates
+#endregion
+
+#######################
+## PIPELINE CONTROLS ##
+#######################
+#region pipeline controls
+
+# Pipeline Name
+# -------------
+  pipelineName: '[ImagingRGName] Deployment'
+
+# Deployed Module Specs
+# ---------------------
+  resourceGroupModuleName: ResourceGroup
+  resourceGroupModuleVersion: <ReplaceWith-ResourceGroupModuleVersion>
+
+  msiModuleName: UserAssignedIdentities
+  msiModuleVersion: <ReplaceWith-UserAssignedIdentitiesModuleVersion>
+
+  rbacModuleName: RoleAssignments
+  rbacModuleVersion: <ReplaceWith-ResourceGroupModuleVersion>
+
+  sharedImageGalleryModuleName: SharedImageGallery
+  sharedImageGalleryModuleVersion: <ReplaceWith-SharedImageGalleryModuleVersion>
+
+  sharedImageDefinitionModuleName: SharedImageDefinition
+  sharedImageDefinitionModuleVersion: <ReplaceWith-SharedImageDefinitionModuleVersion>
+
+  imageTemplateModuleName: ImageTemplates
+  imageTemplateModuleVersion: <ReplaceWith-ImageTemplatesModuleVersion>
+
+# Jobs
+# ----
+  enableJobDeployResourceGroup: true # To enable/disable job
+  enableJobDeployUserAssignedIdentity: true # To enable/disable job
+  enableJobUserAssignedIdentityRoleAssignments: true # To enable/disable job
+  enableJobDeploySharedImageGallery: true # To enable/disable job
+  enableJobDeploySharedImageDefinition: true # To enable/disable job
+  enableJobStartNewImageBuild: true # To enable/disable job
+#endregion
+
+######################
+## SCRIPT VARIABLES ##
+######################
+#region script variables
+
+# ResourceGroup related
+# ---------------------
+  resourcegroupname: '[ImagingRGName]'
+
+# ImageTemplate related
+# ---------------------
+  # Set to true in case the pipeline should terminate only after the image backing process finished
+  synchronouslyWaitForImageBuild: [synchronouslyWaitForImageBuild]
+#endregion

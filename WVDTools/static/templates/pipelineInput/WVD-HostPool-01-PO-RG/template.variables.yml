@@ -1,0 +1,122 @@
+#######################################################################
+##                                NOTE                               ##
+## ------------------------------------------------------------------##
+## - These variables are used to configure the pipeline and provide  ##
+##   variables to pipeline scripts                                   ##
+## - Parameters used for resource deployments are located in the     ##
+##   parameter files in the '.\Parameters' folder                    ##
+#######################################################################
+
+variables:
+
+#############
+## GENERAL ##
+#############
+#region shared
+  orchestrationPath: [orchestrationPath] 
+  orchestrationFunctionsPath: [orchestrationFunctionsPath]
+  modulePath: Modules/$(moduleName)/$(moduleVersion)
+  vmImage: [vmImage]
+  poolName: [poolName]
+  componentStorageContainerName: [componentStorageContainerName]
+  serviceConnection: [serviceConnectionName]
+  componentStorageAccountSubscriptionId: [subscriptionId]
+  componentStorageAccountName: [componentStorageAccountName]
+  location: [PrimaryResourceLocation]
+  usLocation: [SecondaryResourceLocation] 
+
+#region specific
+  rgFolderPath: '$(orchestrationPath)/[HostPool01RGName]'
+  location: [PrimaryResourceLocation]
+  secondaryLocation: [SecondaryResourceLocation] # for image template as francecentral cannot host imagetemplates
+#endregion
+
+#######################
+## PIPELINE CONTROLS ##
+#######################
+#region pipeline controls
+
+# Pipeline Name
+# -------------
+  pipelineName: '[HostPool01RGName] Deployment'
+
+# Deployed Module Specs
+# ---------------------
+  resourceGroupModuleName: ResourceGroup
+  resourceGroupModuleVersion: <ReplaceWith-ResourceGroupModuleVersion>
+
+  wvdHostPoolsModuleName: WvdHostPools
+  wvdHostPoolsModuleVersion: <ReplaceWith-WvdHostPoolsModuleVersion>
+
+  wvdApplicationGroupsModuleName: WvdApplicationGroups
+  wvdApplicationGroupsModuleVersion: <ReplaceWith-WvdApplicationGroupsModuleVersion>
+  
+  virtualMachinesModuleName: VirtualMachines
+  virtualMachinesModuleVersion: <ReplaceWith-VirtualMachinesModuleVersion>
+  
+  wvdApplicationsModuleName: WvdApplications 
+  wvdApplicationsModuleVersion: <ReplaceWith-WvdApplicationsModuleVersion>
+  
+  wvdWorkspacesModuleName: WvdWorkspaces
+  wvdWorkspacesModuleVersion: <ReplaceWith-WvdWorkspacesModuleVersion>
+  
+  wvdScalingSchedulerModuleName: WvdScalingScheduler 
+  wvdScalingSchedulerModuleVersion: <ReplaceWith-WvdScalingSchedulerModuleVersion>
+
+# Jobs
+# ----
+  enableJobDeployResourceGroup: true # To enable/disable job
+  enableJobDeployHostPool: true # To enable/disable job
+  enableJobDeployDesktopAppGroup: true # To enable/disable job
+  enableJobDeployRemoteAppGroup01: true # To enable/disable job
+  enableJobDeploySessionHosts: true # To enable/disable job
+  enableJobDeployApplication: true # To enable/disable job
+  enableJobDeployWorkspace: true # To enable/disable job
+  enableJobDeployScalingScheduler: true # To enable/disable job
+  enableJobUpdateSessionHosts: true # To enable/disable job
+#endregion
+
+######################
+## SCRIPT VARIABLES ##
+######################
+#region script variables
+
+# ResourceGroup related
+# ---------------------
+  resourceGroupName: '[HostPool01RGName]'
+
+# Host Pool related
+# -----------------
+  HostPoolName: '[hostPool01Name]'
+
+# Session Host related
+# --------------------
+  # Health Check
+  sessionHostHealthTimeoutInMinutes: 15 # Maximum time for health-check script (host-pool post-deployment) to wait for the session hosts to come up healthy
+
+# Imaging
+# -------
+  ## Custom Image
+  # If a custom image reference is provided, it is picked up instead of any provided marketplace image information. If not used, should be set to '' (empty)
+  # Is used for the session host deployment as well as the host-pool image update process (if enabled)
+  customImageReferenceId: '[sh01ImageCustomRef]'
+  
+  ## Marketplace Image
+  # Is used for the session host deployment as well as the host-pool image update process (if enabled)
+  publisher: '[sh01ImagePublisher]'
+  offer: '[sh01ImageOffer]'
+  sku: '[sh01ImageSku]'
+  version: '[sh01ImageVersion]'
+  imagelocation: '[PrimaryResourceLocation]'          # Required if not using the 'customImageReferenceId' and 'version' equals 'latest'
+  enableCSE: true                                     # To enable/disable Custom Script Extension
+  profilesStorageAccountName01: '[profilesSa01Name]'  # Only needed in case CSE is enabled
+
+# Image Lifecycle related
+# -----------------------
+  DeleteVMDeadline: '[sh01ImageLifecycleDeleteVMDeadline]'      # In 'yyyyMMddHHmm'. The deadline after which outdated VMs are delete   
+  LogoffDeadline: '[sh01ImageLifecycleLogoffDeadline]'          # In 'yyyyMMddHHmm'. The deadline after which users are log-off by force 
+  LogOffMessageTitle: '[sh01ImageLifecycleLogOffMessageTitle]'  # PopUp title shown to users if they are warned of an upcoming imminent log-off
+  LogOffMessageBody: '[sh01ImageLifecycleLogOffMessageBody]'    # PopUp text shown to users if they are warned of an upcoming imminent log-off    
+  TimeDifference: [sh01ImageLifecycleTimeDifference]            # Time difference to UTC. Enabled handling of different time zones.
+  LAWorkspaceName: '[LogAnalyticsWorkspaceName]'                # Name of an OMS workspace to send host-pool image update process logs to
+#endregion

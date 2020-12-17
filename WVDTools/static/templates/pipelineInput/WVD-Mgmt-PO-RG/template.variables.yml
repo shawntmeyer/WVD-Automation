@@ -1,0 +1,164 @@
+#######################################################################
+##                                NOTE                               ##
+## ------------------------------------------------------------------##
+## - These variables are used to configure the pipeline and provide  ##
+##   variables to pipeline scripts                                   ##
+## - Parameters used for resource deployments are located in the     ##
+##   parameter files in the '.\Parameters' folder                    ##
+#######################################################################
+
+variables: 
+
+  #############
+  ## GENERAL ##
+  #############
+  #region general
+- name: orchestrationPath
+  value: [orchestrationPath]
+
+- name: orchestrationFunctionsPath
+  value: [orchestrationFunctionsPath]
+
+- name: modulePath
+  value: Modules/$(moduleName)/$(moduleVersion)
+
+- name: vmImage
+  value: [vmImage]
+
+- name: poolName
+  value: [poolName]
+  
+- name: componentStorageContainerName
+  value: [componentStorageContainerName]
+
+- name: serviceConnection
+  value: [serviceConnectionName]
+  
+- name: componentStorageAccountSubscriptionId
+  value: [subscriptionId]
+
+- name: componentStorageAccountName
+  value: [componentStorageAccountName]
+
+- name: location
+  value: [PrimaryResourceLocation]
+#endregion
+
+#region specific
+- name: rgFolderPath
+  value: '$(orchestrationPath)/[MgmtRGName]'
+
+- name: location
+  value: <ReplaceWith-PrimaryLocation>
+#endregion
+
+#######################
+## PIPELINE CONTROLS ##
+#######################
+#region pipeline controls
+
+# Pipeline Name
+# -------------
+  - name: pipelineName
+  value: '[MgmtRGName] Deployment'
+
+# Deployed Module Specs
+# ---------------------
+- name: resourceGroupModuleName
+  value: ResourceGroup
+- name: resourceGroupModuleVersion
+  value: <ReplaceWith-ResourceGroupModuleVersion>
+
+- name: keyVaultModuleName
+  value: KeyVault
+- name: keyVaultModuleVersion
+  value: <ReplaceWith-KeyVaultModuleVersion>
+
+- name: storageAccountModuleName
+  value: StorageAccounts
+- name: storageAccountModuleVersion
+  value: <ReplaceWith-StorageAccountsModuleVersion> 
+
+- name: automationAccountModuleName
+  value: AutomationAccounts
+- name: automationAccountModuleVersion
+  value: <ReplaceWith-AutomationAccountsModuleVersion>
+
+- name: rsvModuleName
+  value: RecoveryServicesVaults
+- name: rsvModuleVersion
+  value: <ReplaceWith-RecoveryServicesVaultsModuleVersion>  
+
+# Jobs
+# ----
+- name: enableJobDeployResourceGroup # To enable/disable job
+  value: true
+
+- name: enableJobDeployWVDKeyVault # To enable/disable job
+  value: true
+
+- name: enableJobDeployAssetsStorageAccount # To enable/disable job
+  value: true
+
+- name: enableJobDeployAutomationAccount # To enable/disable job
+  value: true
+
+- name: enableJobDeployRSV # To enable/disable job
+  value: true
+#endregion
+
+######################
+## SCRIPT VARIABLES ##
+######################
+#region script variables
+
+# ResourceGroup related
+# ---------------------
+- name: resourcegroupname
+  value: '[MgmtRGName]'
+
+# Key Vault related
+#------------------
+  # The DevOps variable groups host the secrets required for the deployments 
+- group: '[DevOpsVariableGroup]'
+
+- name: domainJoinUserName
+  value: [shDomainJoinUserName]
+
+- name: keyVaultName
+  value: '[wvdKvltName]'
+
+# Storage Account related
+# -----------------------
+- name: wvdAssetsStorageAccount
+  value: '[assetsSaName]'
+
+  # The folder hosting the files to upload to the assets storage account
+- name: wvdUploadsPath
+  value: '[wvdUploadsPath]'
+
+# Auto Account related
+# --------------------
+- name: AutomationAccountName
+  value: '[automationAccountName]'
+
+- name: ScalingRunbookName
+  value: '[ScalingRunbookName]'
+
+- name: ScalingWebhookName
+  value: '[ScalingWebhookName]'
+
+- name: RunAsConnectionSPName
+  value: '[RunAsConnectionSPName]'
+
+- name: RunAsSelfSignedCertSecretName
+  value: '[RunAsSelfSignedCertSecretName]'
+
+- name: AutoAccountRunAsCertExpiryInMonths
+  value: '[AutoAccountRunAsCertExpiryInMonths]'
+
+# Recovery Services Vault related
+# -------------------------------
+- name: profilesBackupVault
+  value: '[rsvName]'
+#endregion

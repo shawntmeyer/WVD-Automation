@@ -1,0 +1,184 @@
+{
+    "WVDImageSoftware": [
+        {
+            "Name": "LGPO",
+            "DownloadUrl": "",
+            "WebSiteUrl": "https://www.microsoft.com/en-us/download/confirmation.aspx?id=55319",
+            "SearchString": "LGPO",
+            "APIUrl": "",
+            "GitHubRepo": "",
+            "GitHubFileNamePattern": "",
+            "DestinationFilePath": "000-LGPO/lgpo.zip"
+        },
+        {
+            "Name": "Visual Studio 16 Redistributables",
+            "DownloadUrl": "https://aka.ms/vs/16/release/vc_redist.x64.exe",
+            "WebSiteUrl": "",
+            "SearchString": "",
+            "APIUrl": "",
+            "GitHubRepo": "",
+            "GitHubFileNamePattern": "",
+            "DestinationFilePath": "010-VSC++Redistributables/VSRedist.exe"
+        },
+        {
+            "Name": "FSLogix Installers",
+            "DownloadUrl": "https://aka.ms/fslogix_download",
+            "WebSiteUrl": "",
+            "SearchString": "",
+            "APIUrl": "",
+            "GitHubRepo": "",
+            "GitHubFileNamePattern": "",
+            "DestinationFilePath": "030-FSLogix/FSLogix.zip"
+        },
+        {
+            "Name": "Office 365 Deployment Tool",
+            "DownloadUrl": "",
+            "WebSiteUrl": "https://www.microsoft.com/en-us/download/confirmation.aspx?id=49117",
+            "SearchString": "OfficeDeploymentTool",
+            "APIUrl": "",
+            "GitHubRepo": "",
+            "GitHubFileNamePattern": "",
+            "DestinationFilePath": "040-Office365/OfficeDeploymentTool.exe"
+        },
+        {
+            "Name": "Office 365 Administrative Templates",
+            "DownloadUrl": "",
+            "WebsiteUrl": "https://www.microsoft.com/en-us/download/Confirmation.aspx?id=49030",
+            "SearchString": "AdminTemplates_x64",
+            "APIUrl": "",
+            "GitHubRepo": "",
+            "GitHubFileNamePattern": "",
+            "DestinationFilePath": "040-Office365/AdminTemplates_x64.exe"
+        },
+        {
+            "Name": "OneDrive Setup",
+            "DownloadUrl": "https://go.microsoft.com/fwlink/p/?linkid=2121808",
+            "WebSiteUrl": "",
+            "SearchString": "",
+            "APIUrl": "",
+            "GitHubRepo": "",
+            "GitHubFileNamePattern": "",
+            "DestinationFilePath": "050-OneDrive/OneDriveSetup.exe"
+        },
+        {
+            "Name": "Visual Studio 16 Redistributables",
+            "DownloadUrl": "https://aka.ms/vs/16/release/vc_redist.x64.exe",
+            "WebSiteUrl": "",
+            "SearchString": "",
+            "APIUrl": "",
+            "GitHubRepo": "",
+            "GitHubFileNamePattern": "",
+            "DestinationFilePath": "060-Teams/VSRedist.exe"
+        },
+        {
+            "Name": "Teams for Windows 64-bit",
+            "DownloadUrl": "https://teams.microsoft.com/downloads/desktopurl?env=production&plat=windows&arch=x64&managedInstaller=true&download=true",
+            "WebSiteUrl": "",
+            "SearchString": "",
+            "APIUrl": "",
+            "GitHubRepo": "",
+            "GitHubFileNamePattern": "",
+            "DestinationFilePath": "060-Teams/Teams_windows_x64.msi"
+        },
+        {
+            "Name": "Remote Desktop WebRTC Redirector Service",
+            "DownloadUrl": "",
+            "WebsiteUrl": "https://docs.microsoft.com/en-us/azure/virtual-desktop/teams-on-wvd",
+            "SearchString": "Remote Desktop WebRTC",
+            "APIUrl": "",
+            "GitHubRepo": "",
+            "GitHubFileNamePattern": "",
+            "DestinationFilePath": "060-Teams/Websocket.msi"
+        },
+        {
+            "Name": "Edge Enterprise",
+            "DownloadUrl": "",
+            "WebsiteUrl": "",
+            "SearchString": "",
+            "APIUrl": "https://edgeupdates.microsoft.com/api/products?view=enterprise",
+            "GitHubRepo": "",
+            "GitHubFileNamePattern": "",
+            "DestinationFilePath": "070-Edge/MicrosoftEdgeEnterprisex64.msi"
+        },
+        {
+            "Name": "Edge Enterprise Administrative Templates",
+            "DownloadUrl": "",
+            "WebsiteUrl": "",
+            "SearchString": "",
+            "APIUrl": "https://edgeupdates.microsoft.com/api/products?view=enterprise",
+            "GitHubRepo": "",
+            "GitHubFileNamePattern": "",
+            "DestinationFilePath": "070-Edge/MicrosoftEdgePolicyTemplates.zip"
+        },
+        {
+            "Name": "SQL Native Client",
+            "DownloadUrl": "",
+            "WebsiteUrl": "https://www.microsoft.com/en-us/download/confirmation.aspx?id=50402",
+            "SearchString": "x64/sqlncli.msi",
+            "APIUrl": "",
+            "GitHubRepo": "",
+            "GitHubFileNamePattern": "",
+            "DestinationFilePath": "011-SQLNativeClient/sqlncli.msi"
+        },
+        {
+            "Name": "Powershell Core",
+            "DownloadUrl": "",
+            "WebsiteUrl": "",
+            "SearchString": "",
+            "APIUrl": "",
+            "GitHubRepo": "PowerShell/PowerShell",
+            "GitHubFileNamePattern": "*win-x64.msi",
+            "DestinationFilePath": "012-Powershell/Powershell.msi"
+        },
+        {
+            "Name": "VS Code",
+            "DownloadUrl": "https://go.microsoft.com/fwlink/?Linkid=852157",
+            "WebsiteUrl": "",
+            "SearchString": "",
+            "APIUrl": "",
+            "GitHubRepo": "",
+            "GitHubFileNamePattern": "",
+            "DestinationFilePath": "013-VSCode/VSCodesetup.exe"
+        },        
+        {
+            "Name": "Azure Storage Explorer",
+            "DownloadUrl": "https://go.microsoft.com/fwlink/?LinkId=708343&clcid=0x409",
+            "WebsiteUrl": "",
+            "SearchString": "",
+            "APIUrl": "",
+            "GitHubRepo": "",
+            "GitHubFileNamePattern": "",
+            "DestinationFilePath": "014-AzureStorageExplorer/StorageExplorer.exe"
+        },
+        {
+            "Name": "Microsoft Report Builder",
+            "DownloadUrl": "",
+            "WebsiteUrl": "https://www.microsoft.com/en-us/download/confirmation.aspx?id=53613",
+            "SearchString": "ReportBuilder.msi",
+            "APIUrl": "",
+            "GitHubRepo": "",
+            "GitHubFileNamePattern": "",
+            "DestinationFilePath": "015-ReportBuilder/ReportBuilder.msi"
+        },
+        {
+            "Name": "PowerBI Desktop",
+            "DownloadUrl": "",
+            "WebsiteUrl": "https://www.microsoft.com/en-us/download/confirmation.aspx?id=56723",
+            "SearchString": "x64.msi",
+            "APIUrl": "",
+            "GitHubRepo": "",
+            "GitHubFileNamePattern": "",
+            "DestinationFilePath": "016-PowerBIDesktop/PowerBIDesktopRS.msi"
+        },
+        {
+            "Name": "PowerBI Report Builder",
+            "DownloadUrl": "",
+            "WebsiteUrl": "https://www.microsoft.com/en-us/download/confirmation.aspx?id=58158",
+            "SearchString": "PowerBIReportBuilder",
+            "APIUrl": "",
+            "GitHubRepo": "",
+            "GitHubFileNamePattern": "",
+            "DestinationFilePath": "017-PowerBIReportBuilder/PowerBIReportBuilder.msi"
+        }
+    ]
+}

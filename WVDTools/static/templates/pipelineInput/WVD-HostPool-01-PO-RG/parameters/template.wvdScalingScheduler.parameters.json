@@ -1,0 +1,57 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "LogicAppName": {
+            "value": "[logicAppName01Name]"
+        },
+        "webhookURI": {
+            "reference": {
+                "keyVault": {
+                    "id": "/subscriptions/[subscriptionId]/resourceGroups/[HostPool01RGName]/providers/Microsoft.KeyVault/vaults/[wvdKvltName]"
+                },
+                "secretName": "[ScalingWebhookName]-Uri"
+            }
+        },
+        "actionSettingsBody": {
+            "value": {
+                "HostPoolName": "[hostPool01Name]",
+                "ResourceGroupName": "[HostPool01RGName]",
+                "AutomationAccountName": "[automationAccountName]",
+                "LimitSecondsToForceLogOffUser": "[logicAppName01LimitSecondsToForceLogOffUser]",
+                "BeginPeakTime": "[logicAppName01BeginPeakTime]",
+                "EndPeakTime": "[logicAppName01EndPeakTime]",
+                "MaintenanceTagName": "[MaintenanceTagName]",
+                "UtcOffset": "[logicAppName01UtcOffset]",
+                "LogOffMessageBody": "[logicAppName01LogOffMessageBody]",
+                "LogOffMessageTitle": "[logicAppName01LogOffMessageTitle]",
+                "MinimumNumberOfRDSH": "[logicAppName01MinimumNumberOfRDSH]",
+                "SessionThresholdPerCPU": "[logicAppName01SessionThresholdPerCPU]"
+            }
+        },
+        "recurrenceInterval": {
+            "value": "[logicApp01RecurrenceInterval]"
+        },
+        "diagnosticLogsRetentionInDays": {
+            "value": 365
+        },
+        "lockForDeletion": {
+            "value": false
+        },
+        "tags": {
+            "value": { }
+        },
+        "diagnosticStorageAccountId": {
+            "value": ""
+        },
+        "workspaceId": {
+            "value": ""
+        },
+        "eventHubAuthorizationRuleId": {
+            "value": ""
+        },
+        "eventHubName": {
+            "value": ""
+        }
+    }
+}

@@ -1,0 +1,89 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"routeTableName": {
+			"value": "hubnet-udrgw"
+		},
+		"routes": {
+			"value": [
+				{
+					"name": "Default-route-to-NVA",
+					"properties": {
+						"addressPrefix": "10.192.0.0/16",
+						"nextHopType": "VirtualAppliance",
+						"nextHopIpAddress": "10.192.144.20"
+					}
+				},
+				{
+					"name": "Tier0-via-NVA",
+					"properties": {
+						"addressPrefix": "10.192.128.0/22",
+						"nextHopType": "VirtualAppliance",
+						"nextHopIpAddress": "10.192.144.20"
+					}
+				},
+				{
+					"name": "SAPHEC-via-NVA-10-208-0-0--21",
+					"properties": {
+						"addressPrefix": "10.208.0.0/21",
+						"nextHopType": "VirtualAppliance",
+						"nextHopIpAddress": "10.192.144.20"
+					}
+				},
+				{
+					"name": "SAPHEC-via-NVA-10-208-8-0--22",
+					"properties": {
+						"addressPrefix": "10.208.8.0/22",
+						"nextHopType": "VirtualAppliance",
+						"nextHopIpAddress": "10.192.144.20"
+					}
+				},
+				{
+					"name": "SAPHEC-via-NVA-10-208-12-0--24",
+					"properties": {
+						"addressPrefix": "10.208.12.0/24",
+						"nextHopType": "VirtualAppliance",
+						"nextHopIpAddress": "10.192.144.20"
+					}
+				},
+				{
+					"name": "SAPHEC-via-NVA-10-208-13-0--24",
+					"properties": {
+						"addressPrefix": "10.208.13.0/24",
+						"nextHopType": "VirtualAppliance",
+						"nextHopIpAddress": "10.192.144.20"
+					}
+				},
+				{
+					"name": "SAPHEC-via-NVA-10-208-14-0--28",
+					"properties": {
+						"addressPrefix": "10.208.14.0/28",
+						"nextHopType": "VirtualAppliance",
+						"nextHopIpAddress": "10.192.144.20"
+					}
+				},
+				{
+					"name": "VNET-via-NVA",
+					"properties": {
+						"addressPrefix": "10.192.144.0/20",
+						"nextHopType": "VirtualAppliance",
+						"nextHopIpAddress": "10.192.144.20"
+					}
+				},
+				{
+					"name": "GatewaySubnet-to-Self",
+					"properties": {
+						"addressPrefix": "10.192.150.0/27",
+						"nextHopType": "VnetLocal"
+					}
+				}
+			]
+		},
+		"tags": {
+			"value": {
+				"Demo": "HubNetwork"
+			}
+		}
+	}
+}

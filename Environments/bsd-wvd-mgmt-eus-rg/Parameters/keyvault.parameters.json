@@ -1,0 +1,75 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "keyVaultName": {
+            "value": "bsd-wvd-mgmt-kv"
+        },
+        "accessPolicies": {
+            "value": [
+                {
+                    "tenantId": "98c2e3a4-ca42-4c02-bd36-48b960b1d736",
+                    "objectId": "65f20844-f47b-4df3-a460-76ba08bef7ed",
+                    "permissions": {
+                        "keys": [
+                            "All"
+                        ],
+                        "secrets": [
+                            "All"
+                        ],
+                        "certificates": [
+                            "All"
+                        ]
+                    }
+                },
+                {
+                    "tenantId": "98c2e3a4-ca42-4c02-bd36-48b960b1d736",
+                    "objectId": "c3544243-05eb-48a6-8790-92d608dc9166",
+                    "permissions": {
+                        "keys": [
+                            "All"
+                        ],
+                        "secrets": [
+                            "All"
+                        ],
+                        "certificates": [
+                            "All"
+                        ]
+                    }
+                },
+                {
+                    "tenantId": "98c2e3a4-ca42-4c02-bd36-48b960b1d736",
+                    "objectId": "a52f3ef7-4ea7-48d8-a43b-da1a7d81b14c",
+                    "permissions": {
+                        "keys": [
+                            "All"
+                        ],
+                        "secrets": [
+                            "All"
+                        ],
+                        "certificates": [
+                            "All"
+                        ]
+                    }
+                }
+            ]
+        },
+        "secretsObject": {
+            "value": {
+                "secrets": []
+            }
+        },
+        "enableVaultForDeployment": {
+            "value": true
+        },
+        "enableVaultForDiskEncryption": {
+            "value": true
+        },
+        "enableVaultForTemplateDeployment": {
+            "value": true
+        },
+        "vaultSku": {
+            "value": "Standard"
+        }
+    }
+}

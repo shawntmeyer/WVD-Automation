@@ -1,0 +1,782 @@
+name: $(pipelineName)
+
+variables:
+- template: variables.yml
+
+trigger: none
+
+stages:
+- stage: Production
+  jobs:
+
+  ## Resource Group
+  - deployment: Deploy_HostPoolResourceGroup
+    dependsOn: ''
+    environment: Production
+    condition: | 
+      and(
+        not(canceled()), 
+        eq(variables['enableJobDeployResourceGroup'], true)
+      )
+    timeoutInMinutes: 120
+    pool:
+      ${{ if ne(variables.vmImage, '') }}:
+          vmImage: $(vmImage)
+      ${{ if ne(variables.poolName, '') }}:
+          name: $(poolName)
+    strategy:
+        runOnce:
+          deploy:
+            steps:
+              - checkout: self
+              - template: ../.templates/pipeline.steps.artifact.yml
+                parameters:
+                  moduleName: '$(resourceGroupModuleName)'
+                  moduleVersion: '$(resourceGroupModuleVersion)'
+              - task: AzurePowerShell@4
+                displayName: 'Deploy module [$(resourceGroupModuleName)] version [$(resourceGroupModuleVersion)] in [$(resourcegroupname)] via [$(serviceConnection)]'
+                name: Deploy_ResourceGroup_Task_01
+                inputs:
+                  azureSubscription: $(serviceConnection)
+                  ScriptType: InlineScript
+                  inline: |
+                    Write-Verbose "Load function" -Verbose
+                    . '$(Build.SourcesDirectory)/$(orchestrationFunctionsPath)/GeneralDeployment/Invoke-GeneralDeployment.ps1'
+
+                    $parameterFilePath = Join-Path '$(Build.SourcesDirectory)' '$(rgFolderPath)/Parameters/resourcegroup.parameters.json'
+                    $functionInput = @{
+                      location          = '$(location)'
+                      modulePackagePath = Join-Path '$(Build.SourcesDirectory)/$(packagePath)' '$(resourceGroupModuleName)'
+                      parameterFilePath = $parameterFilePath
+                    }
+
+                    Write-Verbose "Invoke task with $functionInput" -Verbose
+                    $functionInput.Keys | ForEach-Object { Write-Verbose ("PARAMETER: `t'{0}' with value '{1}'" -f $_, $functionInput[$_]) -Verbose }
+
+                    Invoke-GeneralDeployment @functionInput -Verbose
+                  errorActionPreference: stop
+                  azurePowerShellVersion: LatestVersion
+                enabled: true
+  # Calculate Custom Image Version
+  - deployment: Set_PipelineVariables
+    dependsOn: ''
+    environment: Production
+    condition: |
+      and (
+        not(canceled()),
+        ne(variables['SharedImageGalleryImageDefinitionID'], '')
+      )
+    timeoutInMinutes: 15
+    pool:
+      vmImage: 'windows-latest'
+    strategy:
+        runOnce:
+          deploy:
+            steps:
+              - task: AzurePowerShell@4
+                displayName: 'Set [CustomImageReferenceId] pipeline variable via [$(serviceConnection)]'
+                name: Set_CustomImageReferenceId_Task
+                inputs:
+                  azureSubscription: $(serviceConnection)
+                  ScriptType: InlineScript
+                  inline: |
+                    write-verbose "Starting script to set 'CustomImageReferenceId' pipeline variable." -verbose
+                    $CustomImageReferenceId = '$(SharedImageGalleryImageDefinitionID)'
+                    Write-Verbose "Shared Image Gallery Resource ID: [$CustomImageReferenceId]." -verbose
+                    $imageVersion = '$(ImageVersion)'
+                    Write-Verbose "Specified Image Version: [$imageVersion]."
+                    $imageParam = $CustomImageReferenceId.Split('/')
+                    $sigRg = $imageParam[4]
+                    $sig = $imageParam[8]
+                    $sid = $imageParam[10]
+                    If ($ImageVersion -ne 'latest') {
+                      If (-not (Get-AzGalleryImageVersion -ResourceGroupName $sigRg -GalleryName $sig -GalleryImageDefinitionName $sid | Where-Object {$_.Name -eq $ImageVersion})) {
+                        throw "Image Version [$imageVersion] of Image Definition [$sid] not found in Shared Image Gallery [$sig]."
+                      }
+                      Else {
+                        $CustomImageReferenceId = "$CustomImageReferenceId/versions/$imageVersion"
+                      }            
+                    }
+                    Else {
+                      If (-not ($AvailableVersions = Get-AzGalleryImageVersion -ResourceGroupName $sigRg -GalleryName $sig -GalleryImageDefinitionName $sid | Where-Object {$_.PublishingProfile.ExcludeFromLatest -ne $true}) ) {
+                        throw "No image versions found for image definition [$sid] in gallery [$sig]"
+                      }
+                      Else {
+                        $LatestVersion = (($AvailableVersions.Name -as [Version[]]) | Measure-Object -Maximum).Maximum.ToString()
+                        Write-Output "Latest [$sig] image version found is : [$LatestVersion]."
+                        $CustomImageReferenceId = "$CustomImageReferenceId/versions/$LatestVersion"
+                      }
+                    }
+                    Write-Verbose "CustomImageReferenceId: [$CustomImageReferenceId]." -verbose
+                    # Output variable to pipeline for use by other jobs and tasks
+                    echo "##vso[task.setvariable variable=CustomImageReferenceId;isOutput=true]$CustomImageReferenceId"
+                    # Use for jobs that require this value
+                    # CustomImageReferenceId: $[ dependencies.Set_PipelineVariables.outputs['Set_PipelineVariables.Set_CustomImageReferenceId_Task.CustomImageReferenceId'] ]            
+                  errorActionPreference: stop
+                  azurePowerShellVersion: LatestVersion
+                enabled: true
+
+  ## Host pool
+  - deployment: Deploy_WVDHostPool
+    dependsOn:
+    - ${{ if eq(variables['enableJobDeployResourceGroup'], true) }}:
+      - Deploy_HostPoolResourceGroup
+    - ${{ if ne(variables['SharedImageGalleryImageDefinitionID'], '') }}:
+      - Set_PipelineVariables
+    environment: Production
+    condition: |
+      and (
+        not(canceled()),
+        eq(variables['enableJobDeployHostPool'], true),
+        in(dependencies.Deploy_HostPoolResourceGroup.result, '', 'Succeeded', 'Skipped'),
+        in(dependencies.Set_PipelineVariables.result, '', 'Succeeded', 'Skipped')
+      )
+    timeoutInMinutes: 120
+    pool:
+      ${{ if ne(variables.vmImage, '') }}:
+          vmImage: $(vmImage)
+      ${{ if ne(variables.poolName, '') }}:
+          name: $(poolName)
+    variables:
+      CustomImageReferenceId: $[ dependencies.Set_PipelineVariables.outputs['Set_PipelineVariables.Set_CustomImageReferenceId_Task.CustomImageReferenceId'] ]  
+    strategy:
+        runOnce:
+          deploy:
+            steps:
+              - checkout: self
+              - template: ../.templates/pipeline.steps.artifact.yml
+                parameters:
+                  moduleName: '$(wvdHostPoolsModuleName)'
+                  moduleVersion: '$(wvdHostPoolsModuleVersion)'
+              - task: AzurePowerShell@4
+                displayName: 'Deploy module [$(wvdHostPoolsModuleName)] version [$(wvdHostPoolsModuleVersion)] in [$(resourceGroupName)] via [$(serviceConnection)]'
+                name: Deploy_WVDHostPool_Task
+                inputs:
+                  azureSubscription: $(serviceConnection)
+                  ScriptType: InlineScript
+                  inline: |
+                    Write-Verbose "Load function" -Verbose
+                    . '$(Build.SourcesDirectory)/$(orchestrationFunctionsPath)/GeneralDeployment/Invoke-GeneralDeployment.ps1'
+                    $CustomImageReferenceId = '$(CustomImageReferenceId)'
+                    Write-Verbose "CustomImageReferenceId: [$CustomImageReferenceId]" -verbose
+                    $parameterFilePath = Join-Path '$(Build.SourcesDirectory)' '$(rgFolderPath)/Parameters/wvdhostpool.parameters.json'
+                    $functionInput = @{
+                      resourcegroupName = '$(resourceGroupName)'
+                      modulePackagePath = Join-Path '$(Build.SourcesDirectory)/$(packagePath)' '$(wvdHostPoolsModuleName)'
+                      parameterFilePath = $parameterFilePath
+                      location          = '$(location)' # Required by resource type
+                    }
+
+                    Write-Verbose "Invoke task with" -Verbose
+                    $functionInput.Keys | ForEach-Object { Write-Verbose ("PARAMETER: `t'{0}' with value '{1}'" -f $_, $functionInput[$_]) -Verbose }
+
+                    Invoke-GeneralDeployment @functionInput -Verbose
+                  errorActionPreference: stop
+                  azurePowerShellVersion: LatestVersion
+                enabled: true  
+
+  ## Desktop Application Group
+  - deployment: Deploy_DesktopAppGroup
+    dependsOn: 
+    - ${{ if eq(variables['enableJobDeployResourceGroup'], true) }}:
+      - Deploy_HostPoolResourceGroup
+    - ${{ if eq(variables['enableJobDeployHostPool'], true) }}:
+      - Deploy_WVDHostPool
+    environment: Production
+    condition: |
+      and (
+        not(canceled()),
+        eq(variables['enableJobDeployDesktopAppGroup'], true),
+        in(dependencies.Deploy_HostPoolResourceGroup.result, '', 'Succeeded', 'Skipped'),
+        in(dependencies.Deploy_WVDHostPool.result, '', 'Succeeded', 'Skipped')
+      )
+    timeoutInMinutes: 120
+    pool:
+      ${{ if ne(variables.vmImage, '') }}:
+          vmImage: $(vmImage)
+      ${{ if ne(variables.poolName, '') }}:
+          name: $(poolName)
+    strategy:
+        runOnce:
+          deploy:
+            steps:
+              - checkout: self
+              - template: ../.templates/pipeline.steps.artifact.yml
+                parameters:
+                  moduleName: '$(wvdApplicationGroupsModuleName)'
+                  moduleVersion: '$(wvdApplicationGroupsModuleVersion)'
+              - powershell: |
+                  if(-not (Get-Module Az.DesktopVirtualization -ListAvailable)) {
+                      Write-Verbose "Installing module 'Az.DesktopVirtualization'" -Verbose
+                      Install-Module Az.DesktopVirtualization -Repository PSGallery -Force -Scope CurrentUser
+                  } else {
+                      Write-Verbose "Module 'Az.DesktopVirtualization' already installed" -Verbose
+                  }
+                displayName: 'Install Az.DesktopVirtualization module'
+              - task: AzurePowerShell@4
+                displayName: 'Deploy module [$(wvdApplicationGroupsModuleName)] version [$(wvdApplicationGroupsModuleVersion)] in [$(resourceGroupName)] via [$(serviceConnection)]'
+                name: Deploy_WvdApplicationGroups_Task
+                inputs:
+                  azureSubscription: $(serviceConnection)
+                  ScriptType: InlineScript
+                  inline: |
+                    Write-Verbose "Load function" -Verbose
+                    . '$(Build.SourcesDirectory)/$(orchestrationFunctionsPath)/GeneralDeployment/Invoke-GeneralDeployment.ps1'
+                
+                    $parameterFilePath = Join-Path '$(Build.SourcesDirectory)' '$(rgFolderPath)/Parameters/wvddesktopapplicationgroup.parameters.json'
+                    $functionInput = @{
+                      resourcegroupName = '$(resourceGroupName)'
+                      modulePackagePath = Join-Path '$(Build.SourcesDirectory)/$(packagePath)' '$(wvdApplicationGroupsModuleName)'
+                      parameterFilePath = $parameterFilePath
+                      location          = '$(location)' # Required by resource type
+                    }
+
+                    Write-Verbose "Invoke task with" -Verbose
+                    $functionInput.Keys | ForEach-Object { Write-Verbose ("PARAMETER: `t'{0}' with value '{1}'" -f $_, $functionInput[$_]) -Verbose }
+
+                    Invoke-GeneralDeployment @functionInput -Verbose
+                  errorActionPreference: stop
+                  azurePowerShellVersion: LatestVersion
+                enabled: true
+              - task: AzurePowerShell@4
+                displayName: 'Update Desktop App Group Friendly Name'
+                name: Update_WvdDesktopApplicationGroupFriendlyName_Task
+                inputs:
+                  azureSubscription: $(serviceConnection)
+                  ScriptType: InlineScript
+                  inline: |
+                    Write-Verbose "Load function" -Verbose
+                    
+                    $parameterFilePath = Join-Path '$(Build.SourcesDirectory)' '$(rgFolderPath)/Parameters/wvddesktopapplicationgroup.parameters.json'
+                    
+                    $DesktopAppGroupJSON = ConvertFrom-Json (Get-Content -Raw -Path $parameterFilePath)
+                    $DesktopAppGroupName = $DesktopAppGroupJSON.parameters.appGroupName.value
+                    $DesktopAppResourceGroup = '$(resourceGroupName)'
+                    $DesktopAppGroupFriendlyName = $DesktopAppGroupJSON.parameters.appGroupFriendlyName.value
+                    $DesktopAppGroup=Get-AzWvdApplicationGroup -Name $DesktopAppGroupName -ResourceGroupName $DesktopAppResourceGroup
+                    If ($DesktopAppGroup.FriendlyName -ne $DesktopAppGroupFriendlyName) {
+                        Write-Verbose "Updating Desktop Application Group Friendly Name to [$DesktopAppGroupFriendlyName]." -verbose
+                        $null = Update-azWVDApplicationGroup -name $DesktopAppGroupName -ResourceGroupName $DesktopAppResourceGroup -friendlyname "$DeskopAppGroupFriendlyName"
+                    }
+                    Else {
+                      Write-Verbose "Desktop Application Group Friendly name is already correct."
+                    }
+                  errorActionPreference: stop
+                  azurePowerShellVersion: LatestVersion
+                enabled: true
+
+  ## Remote Application group
+  - deployment: Deploy_RemoteAppGroup01
+    dependsOn: 
+    - ${{ if eq(variables['enableJobDeployResourceGroup'], true) }}:
+      - Deploy_HostPoolResourceGroup
+    - ${{ if eq(variables['enableJobDeployHostPool'], true) }}:
+      - Deploy_WVDHostPool 
+    environment: Production
+    condition: |
+      and (
+        not(canceled()),
+        eq(variables['enableJobDeployRemoteAppGroup01'], true),
+        in(dependencies.Deploy_HostPoolResourceGroup.result, '', 'Succeeded', 'Skipped'),
+        in(dependencies.Deploy_WVDHostPool.result, '', 'Succeeded', 'Skipped')
+      )
+    timeoutInMinutes: 120
+    pool:
+      ${{ if ne(variables.vmImage, '') }}:
+          vmImage: $(vmImage)
+      ${{ if ne(variables.poolName, '') }}:
+          name: $(poolName)
+    strategy:
+        runOnce:
+          deploy:
+            steps:
+              - checkout: self
+              - template: ../.templates/pipeline.steps.artifact.yml
+                parameters:
+                  moduleName: '$(wvdApplicationGroupsModuleName)'
+                  moduleVersion: '$(wvdApplicationGroupsModuleVersion)'
+              - task: AzurePowerShell@4
+                displayName: 'Deploy module [$(wvdApplicationGroupsModuleName)] version [$(wvdApplicationGroupsModuleVersion)] in [$(resourceGroupName)] via [$(serviceConnection)]'
+                name: Deploy_WvdApplicationGroups_Task
+                inputs:
+                  azureSubscription: $(serviceConnection)
+                  ScriptType: InlineScript
+                  inline: |
+                    Write-Verbose "Load function" -Verbose
+                    . '$(Build.SourcesDirectory)/$(orchestrationFunctionsPath)/GeneralDeployment/Invoke-GeneralDeployment.ps1'
+                
+                    $parameterFilePath = Join-Path '$(Build.SourcesDirectory)' '$(rgFolderPath)/Parameters/wvdapplicationgroup-01.parameters.json'
+                    $functionInput = @{
+                      resourcegroupName = '$(resourceGroupName)'
+                      modulePackagePath = Join-Path '$(Build.SourcesDirectory)/$(packagePath)' '$(wvdApplicationGroupsModuleName)'
+                      parameterFilePath = $parameterFilePath
+                      location          = '$(location)' # Required by resource type
+                    }
+
+                    Write-Verbose "Invoke task with" -Verbose
+                    $functionInput.Keys | ForEach-Object { Write-Verbose ("PARAMETER: `t'{0}' with value '{1}'" -f $_, $functionInput[$_]) -Verbose }
+
+                    Invoke-GeneralDeployment @functionInput -Verbose
+                  errorActionPreference: stop
+                  azurePowerShellVersion: LatestVersion
+                enabled: true
+
+  ## Session Hosts
+  - deployment: Deploy_WVDSessionHosts
+    dependsOn:
+    - ${{ if eq(variables['enableJobDeployResourceGroup'], true) }}:
+      - Deploy_HostPoolResourceGroup
+    - ${{ if eq(variables['enableJobDeployHostPool'], true) }}:
+      - Deploy_WVDHostPool
+    - ${{ if ne(variables['SharedImageGalleryImageDefinitionID'], '') }}:
+      - Set_PipelineVariables
+    environment: Production
+    condition: |
+      and (
+        not(canceled()),
+        eq(variables['enableJobDeploySessionHosts'], true),
+        in(dependencies.Deploy_HostPoolResourceGroup.result, '', 'Succeeded', 'Skipped'),
+        in(dependencies.Set_PipelineVariables.result, '', 'Succeeded', 'Skipped'),
+        in(dependencies.Deploy_WVDHostPool.result, '', 'Succeeded', 'Skipped')
+      )
+    timeoutInMinutes: 120
+    pool:
+      ${{ if ne(variables.vmImage, '') }}:
+          vmImage: $(vmImage)
+      ${{ if ne(variables.poolName, '') }}:
+          name: $(poolName)
+    variables:
+      CustomImageReferenceId: $[ dependencies.Set_PipelineVariables.outputs['Set_PipelineVariables.Set_CustomImageReferenceId_Task.CustomImageReferenceId'] ]  
+    strategy:
+        runOnce:
+          deploy:
+            steps:
+              - checkout: self
+              - template: ../.templates/pipeline.steps.artifact.yml
+                parameters:
+                  moduleName: '$(virtualMachinesModuleName)'
+                  moduleVersion: '$(virtualMachinesModuleVersion)'
+              - powershell: |
+                  if(-not (Get-Module Az.DesktopVirtualization -ListAvailable)) {
+                      Write-Verbose "Installing module 'Az.DesktopVirtualization'" -Verbose
+                      Install-Module Az.DesktopVirtualization -Repository PSGallery -Force -Scope CurrentUser
+                  } else {
+                      Write-Verbose "Module 'Az.DesktopVirtualization' already installed" -Verbose
+                  }
+                displayName: 'Install required module'
+              - task: AzurePowerShell@4
+                displayName: 'Deploy module [$(virtualMachinesModuleName)] version [$(virtualMachinesModuleVersion)] in [$(resourceGroupName)] via [$(serviceConnection)]'
+                name: Deploy_SessionHosts_Task
+                inputs:
+                  azureSubscription: $(serviceConnection)
+                  ScriptType: InlineScript
+                  inline: |
+                    Write-Verbose "Load function" -Verbose
+                    . '$(Build.SourcesDirectory)/$(orchestrationFunctionsPath)/GeneralDeployment/Invoke-GeneralDeployment.ps1'
+                    . '$(Build.SourcesDirectory)/$(orchestrationFunctionsPath)/GeneralDeployment/Add-CustomParameters.ps1'
+
+                    $parameterFilePath = Join-Path '$(Build.SourcesDirectory)' '$(rgFolderPath)/Parameters/wvdsessionhost.parameters.json'
+                    $functionInput = @{
+                      resourcegroupName = '$(resourceGroupName)'
+                      modulePackagePath = Join-Path '$(Build.SourcesDirectory)/$(packagePath)' '$(virtualMachinesModuleName)'
+                      parameterFilePath = $parameterFilePath
+                    }
+
+                    Write-Verbose "Invoke task with" -Verbose
+                    $functionInput.Keys | ForEach-Object { Write-Verbose ("PARAMETER: `t'{0}' with value '{1}'" -f $_, $functionInput[$_]) -Verbose }
+
+                    Write-Verbose "Fetch and populated pipeline outputs" -Verbose
+                    $regInfo = Get-AzWvdRegistrationInfo -HostPoolName '$(hostpoolname)' -ResourceGroupName '$(resourceGroupName)'
+
+                    $overwriteInputObject = @{
+                      parameterFilePath     = $parameterFilePath
+                      valueMap              = @(
+                        @{ path = 'dscConfiguration.value.protectedSettings.configurationArguments.registrationInfoToken'; value = $regInfo.Token }
+                      )
+                    }
+                    Add-CustomParameters @overwriteInputObject
+
+                    $parameterObjects = $()
+                    if (-not [String]::IsNullOrEmpty('$(CustomImageReferenceId)')) {
+                      Write-Verbose "Using custom image ref ['$(CustomImageReferenceId)']" -Verbose
+                      $parameterObjects += @{
+                        imageReference = @{
+                          id = '$(CustomImageReferenceId)'
+                        }
+                      }
+                    }
+                    else {
+                      $imageReference = @{
+                        publisher = '$(publisher)'
+                        offer     = '$(offer)'
+                        sku       = '$(sku)'
+                        version   = '$(version)'
+                      }
+                      Write-Verbose ("Using published image ref [{0}]" -f ($imageReference | ConvertTo-Json)) -Verbose
+                      $parameterObjects += @{
+                        imageReference = $imageReference
+                      }
+                    }
+
+                    if ([System.Convert]::ToBoolean('$(enableCSE)')) {
+                      # Retrieve storage account key for the first storage account
+                      $storageAccount01 = Get-AzResource -Name $(profilesStorageAccountName01) -ResourceType 'Microsoft.Storage/storageAccounts'
+                      $SASKey01 = (Get-AzStorageAccountKey -AccountName $storageAccount01.Name -ResourceGroupName $storageAccount01.ResourceGroupName)[0]       
+
+                      # Retrieve storage account key for the second storage account
+                      # $storageAccount02 = Get-AzResource -Name $(profilesStorageAccountName02) -ResourceType 'Microsoft.Storage/storageAccounts'
+                      # $SASKey02 = (Get-AzStorageAccountKey -AccountName $storageAccount02.Name -ResourceGroupName $storageAccount02.ResourceGroupName)[0]    
+
+                      # Single storage account
+                      $windowsScriptExtensionCommandToExecute = 'powershell -ExecutionPolicy Unrestricted -Command "& .\scriptExtensionMasterInstaller.ps1 -Dynparameters @{FSLogixKeys = @([pscustomobject]@{StAName=\"'+ $($storageAccount01.Name) +'\";StAKey=\"'+ $($SASKey01.Value) +'\"})}"'
+                      # Two storage accounts
+                      # $windowsScriptExtensionCommandToExecute = 'powershell -ExecutionPolicy Unrestricted -Command "& .\scriptExtensionMasterInstaller.ps1 -Dynparameters @{FSLogixKeys = @([pscustomobject]@{StAName=\"'+ $($storageAccount01.Name) +'\";StAKey=\"'+ $($SASKey01.Value) +'\"} ;[pscustomobject]@{StAName=\"'+ $($storageAccount02.Name) +'\";StAKey=\"'+ $($SASKey02.Value) +'\"})}"'
+
+                      $windowsScriptExtensionCommandToExecute = ConvertTo-SecureString -String $windowsScriptExtensionCommandToExecute -AsPlainText -Force
+                      
+                      $parameterObjects += @{
+                        windowsScriptExtensionCommandToExecute = $windowsScriptExtensionCommandToExecute
+                      }
+                    }
+
+                    $functionInput += @{
+                      optionalParameters = $parameterObjects
+                    }
+
+                    Invoke-GeneralDeployment @functionInput -Verbose
+                  errorActionPreference: stop
+                  azurePowerShellVersion: LatestVersion
+                enabled: true 
+              - task: AzurePowerShell@4
+                displayName: "Trigger module [$(virtualMachinesModuleName)] post-deployment"
+                name: PostDeploy_SessionHosts_Task
+                inputs:
+                  azureSubscription: $(serviceConnection)
+                  ScriptType: InlineScript
+                  inline: |
+                    Write-Verbose "Load function" -Verbose
+                    . '$(Build.SourcesDirectory)/$(orchestrationFunctionsPath)/GeneralDeployment/Invoke-HostPoolPostDeployment.ps1'
+
+                    $functionInput = @{
+                      orchestrationFunctionsPath = Join-Path '$(Build.SourcesDirectory)' '$(orchestrationFunctionsPath)'    
+                      HostPoolName               = '$(HostPoolName)'
+                      HostPoolRGName             = '$(ResourceGroupName)'
+                      timeoutInMinutes           = '$(sessionHostHealthTimeoutInMinutes)'
+                      CustomImageReferenceId     = '$(CustomImageReferenceId)'
+                      MarketplaceImageVersion    = '$(version)' 
+                      MarketplaceImagePublisher  = '$(publisher)'
+                      MarketplaceImageOffer      = '$(offer)'
+                      MarketplaceImageSku        = '$(sku)'
+                      MarketplaceImageLocation   = '$(imagelocation)'
+                    }
+                    
+                    Write-Verbose "Invoke task with" -Verbose
+                    $functionInput.Keys | ForEach-Object { Write-Verbose ("PARAMETER: `t'{0}' with value '{1}'" -f $_, $functionInput[$_]) -Verbose }
+
+                    Invoke-HostPoolPostDeployment @functionInput -Verbose
+                  errorActionPreference: stop
+                  azurePowerShellVersion: LatestVersion
+                enabled: true
+  
+  ## Applications
+  - deployment: Deploy_Application
+    dependsOn:
+    - ${{ if eq(variables['enableJobDeployResourceGroup'], true) }}:
+      - Deploy_HostPoolResourceGroup
+    - ${{ if eq(variables['enableJobDeploySessionHosts'], true) }}:
+      - Deploy_WVDSessionHosts
+    - ${{ if eq(variables['enableJobDeployRemoteAppGroup01'], true) }}:
+      - Deploy_RemoteAppGroup01
+    environment: Production
+    condition: |
+      and (
+        not(canceled()),
+        eq(variables['enableJobDeployApplication'], true),
+        in(dependencies.Deploy_HostPoolResourceGroup.result, '', 'Succeeded', 'Skipped'),
+        in(dependencies.Deploy_WVDSessionHosts.result, '', 'Succeeded', 'Skipped'),
+        in(dependencies.Deploy_RemoteAppGroup01.result, '', 'Succeeded', 'Skipped')
+      )
+    timeoutInMinutes: 120
+    pool:
+      ${{ if ne(variables.vmImage, '') }}:
+          vmImage: $(vmImage)
+      ${{ if ne(variables.poolName, '') }}:
+          name: $(poolName)
+    strategy:
+        runOnce:
+          deploy:
+            steps:
+              - checkout: self
+              - template: ../.templates/pipeline.steps.artifact.yml
+                parameters:
+                  moduleName: '$(wvdApplicationsModuleName)'
+                  moduleVersion: '$(wvdApplicationsModuleVersion)'
+              - task: AzurePowerShell@4
+                displayName: 'Deploy module [$(wvdApplicationsModuleName)] version [$(wvdApplicationsModuleVersion)] in [$(resourceGroupName)] via [$(serviceConnection)]'
+                name: Deploy_WvdApplications_Task
+                inputs:
+                  azureSubscription: $(serviceConnection)
+                  ScriptType: InlineScript
+                  inline: |
+                    Write-Verbose "Load function" -Verbose
+                    . '$(Build.SourcesDirectory)/$(orchestrationFunctionsPath)/GeneralDeployment/Invoke-GeneralDeployment.ps1'
+
+                    $parameterFilePath = Join-Path '$(Build.SourcesDirectory)' '$(rgFolderPath)/Parameters/wvdapplication.parameters.json'
+                    $functionInput = @{
+                      resourcegroupName = '$(resourceGroupName)'
+                      modulePackagePath = Join-Path '$(Build.SourcesDirectory)/$(packagePath)' '$(wvdApplicationsModuleName)'
+                      parameterFilePath = $parameterFilePath
+                      location          = '$(secondaryLocation)' # Required by resource type
+                    }
+
+                    Write-Verbose "Invoke task with" -Verbose
+                    $functionInput.Keys | ForEach-Object { Write-Verbose ("PARAMETER: `t'{0}' with value '{1}'" -f $_, $functionInput[$_]) -Verbose }
+
+                    Invoke-GeneralDeployment @functionInput -Verbose
+                  errorActionPreference: stop
+                  azurePowerShellVersion: LatestVersion
+                enabled: true
+
+  ## Workspace
+  - deployment: Deploy_Workspace
+    dependsOn:
+    - ${{ if eq(variables['enableJobDeployResourceGroup'], true) }}:
+      - Deploy_HostPoolResourceGroup
+    - ${{ if eq(variables['enableJobDeployDesktopAppGroup'], true) }}:
+      - Deploy_DesktopAppGroup 
+    - ${{ if eq(variables['enableJobDeployRemoteAppGroup01'], true) }}:
+      - Deploy_RemoteAppGroup01 
+    environment: Production
+    condition: |
+      and (
+        not(canceled()),
+        eq(variables['enableJobDeployWorkspace'], true),
+        in(dependencies.Deploy_HostPoolResourceGroup.result, '', 'Succeeded', 'Skipped'),
+        in(dependencies.Deploy_DesktopAppGroup.result, '', 'Succeeded', 'Skipped'),
+        in(dependencies.Deploy_RemoteAppGroup01.result, '', 'Succeeded', 'Skipped')
+      )
+    timeoutInMinutes: 120
+    pool:
+      ${{ if ne(variables.vmImage, '') }}:
+          vmImage: $(vmImage)
+      ${{ if ne(variables.poolName, '') }}:
+          name: $(poolName)
+    strategy:
+        runOnce:
+          deploy:
+            steps:
+              - checkout: self
+              - template: ../.templates/pipeline.steps.artifact.yml
+                parameters:
+                  moduleName: '$(wvdWorkspacesModuleName)'
+                  moduleVersion: '$(wvdWorkspacesModuleVersion)'
+              - powershell: |
+                  if(-not (Get-Module Az.DesktopVirtualization -ListAvailable)) {
+                      Write-Verbose "Installing module 'Az.DesktopVirtualization'" -Verbose
+                      Install-Module Az.DesktopVirtualization -Repository PSGallery -Force -Scope CurrentUser
+                  } else {
+                      Write-Verbose "Module 'Az.DesktopVirtualization' already installed" -Verbose
+                  }
+                displayName: 'Install required module'
+              - task: AzurePowerShell@4
+                displayName: 'Create and/or update WVD Workspace via [$(serviceConnection)]'
+                name: Deploy_WvdWorkspaces_Task
+                inputs:
+                  azureSubscription: $(serviceConnection)
+                  ScriptType: InlineScript
+                  inline: |
+                    $WorkSpaceName = '$(WorkSpaceName)'
+                    $ResourceGroup = '$(resourceGroupName)'
+                    $WorkspaceResourceGroupName = '$(WorkspaceResourceGroupName)'
+                    $Location = '$(location)'
+
+                    Write-Output "Checking for existing workspace with name [$WorkspaceName]"
+                    If (Get-AzWvdWorkspace -ResourceGroupName $WorkspaceResourceGroupName | Where-Object {$_.Name -eq "$WorkspaceName"}) {
+                      Write-Output "[$WorkspaceName] found."
+                      Write-Output "Retrieving current Application Groups referenced by workspace."
+                      $CurrentAppGroups = (Get-AzWvdWorkspace -Name $WorkspaceName -ResourceGroupName $WorkspaceResourceGroupName).ApplicationGroupReference
+                    }
+                    Else {
+                      Write-Output "[$WorkspaceName] not found. Creating."
+                      New-AzWvdWorkspace -Name $WorkspaceName -ResourceGroupName $WorkspaceResourceGroupName -Location $Location
+                      $CurrentAppGroups = $null
+                    }
+
+                    $NewAppGroups = $CurrentAppGroups
+                    # Process Desktop Application Group
+                    Write-Output "Gathering Desktop Application Group name from parameter file."
+                    $DesktopAppGroupParameterFile = Join-Path '$(Build.SourcesDirectory)' '$(rgFolderPath)/Parameters/wvddesktopapplicationgroup.parameters.json'
+                    $DesktopAppName = (Get-Content -Path "$DesktopAppGroupParameterFile" | ConvertFrom-Json).parameters.appGroupName.Value
+                    Write-Output "Found [$DesktopAppName]. Now ensuring it exists in the resource group."
+                    $DesktopApp = Get-AzWvdApplicationGroup -ResourceGroupName $ResourceGroup | Where-Object {$_.Name -eq "$DesktopAppName"}
+                    If ($DesktopApp) {
+                      $DesktopAppId = $DesktopApp.Id
+                      If ($NewAppGroups -notcontains $DesktopAppId) {
+                        Write-Output "Desktop Application Group is not already referenced by [$WorkspaceName]. Adding."
+                        $NewAppGroups += $DesktopAppId
+                      }
+                      Else {
+                        Write-Output "Desktop Application Group is already referenced by [$WorkspaceName]."
+                      }
+                    }
+                    Else {
+                      Write-Warning "The Desktop Application Group [$DesktopAppName] was not found in this resource group."
+                    }
+
+                    # Process Remote App Application Groups
+                    Write-Output "Gathering Remote App Application Group names from parameter files."
+                    $AppGroupFilesPath = Join-Path '$(Build.SourcesDirectory)' '$(rgFolderPath)/Parameters'
+                    $AppGroupFiles = Get-ChildItem -Path "$AppGroupFilesPath" -filter 'wvdapplicationgroup*.parameters.json'
+                    Foreach ($file in $AppGroupFiles) {
+                      $RemoteAppGroupName = (Get-Content -Path $($file.FullName) | ConvertFrom-Json).parameters.appGroupName.Value
+                      Write-Output "Found [$RemoteAppGroupName]. Now ensuring it exists in the resource group."
+                      $RemoteAppGroup = Get-AzWvdApplicationGroup -ResourceGroupName $ResourceGroup | Where-Object {$_.Name -eq "$RemoteAppGroupName"}
+                      If ($RemoteAppGroup) {
+                        $RemoteAppGroupID = $RemoteAppGroup.Id
+                        If ($NewAppGroups -notcontains $RemoteAppGroupID) {
+                          Write-Output "Remote App Application Group is not already referenced by [$WorkspaceName]. Adding."
+                          $NewAppGroups += $RemoteAppGroupID
+                        }
+                        Else {
+                          Write-Output "Remote App Application Group is already referenced by [$WorkspaceName]."
+                        }
+                      }
+                      Else {
+                        Write-Warning "The Remote App Application Group [$RemoteAppGroupName] was not found in this resource group."
+                      }
+                    }
+
+                    Update-azWvdworkspace -Name $WorkspaceName -ResourceGroupName $WorkspaceResourceGroupName -ApplicationGroupReference $NewAppGroup
+                  errorActionPreference: stop
+                  azurePowerShellVersion: LatestVersion
+                enabled: true
+
+  ## Scaling Logic App
+  - deployment: Deploy_WvdScalingScheduler
+    dependsOn:
+    - ${{ if eq(variables['enableJobDeployResourceGroup'], true) }}:
+      - Deploy_HostPoolResourceGroup
+    - ${{ if eq(variables['enableJobDeploySessionHosts'], true) }}:
+      - Deploy_WVDSessionHosts
+    environment: Production
+    condition: |
+      and (
+        not(canceled()),
+        eq(variables['enableJobDeployScalingScheduler'], true),
+        in(dependencies.Deploy_HostPoolResourceGroup.result, '', 'Succeeded', 'Skipped'),
+        in(dependencies.Deploy_WVDSessionHosts.result, '', 'Succeeded', 'Skipped')
+      )
+    timeoutInMinutes: 120
+    pool:
+      ${{ if ne(variables.vmImage, '') }}:
+          vmImage: $(vmImage)
+      ${{ if ne(variables.poolName, '') }}:
+          name: $(poolName)
+    strategy:
+        runOnce:
+          deploy:
+            steps:
+              - checkout: self
+              - template: ../.templates/pipeline.steps.artifact.yml
+                parameters:
+                  moduleName: '$(wvdScalingSchedulerModuleName)'
+                  moduleVersion: '$(wvdScalingSchedulerModuleVersion)'
+              - task: AzurePowerShell@4
+                displayName: 'Deploy module [$(wvdScalingSchedulerModuleName)] version [$(wvdScalingSchedulerModuleVersion)] in [$(resourceGroupName)] via [$(serviceConnection)]'
+                name: Deploy_WvdScalingScheduler_Task
+                inputs:
+                  azureSubscription: $(serviceConnection)
+                  ScriptType: InlineScript
+                  inline: |
+                    Write-Verbose "Load function" -Verbose
+                    . '$(Build.SourcesDirectory)/$(orchestrationFunctionsPath)/GeneralDeployment/Invoke-GeneralDeployment.ps1'
+
+                    $parameterFilePath = Join-Path '$(Build.SourcesDirectory)' '$(rgFolderPath)/Parameters/wvdScalingScheduler.parameters.json'
+                    $functionInput = @{
+                      resourcegroupName = '$(resourceGroupName)'
+                      modulePackagePath = Join-Path '$(Build.SourcesDirectory)/$(packagePath)' '$(wvdScalingSchedulerModuleName)'
+                      parameterFilePath = $parameterFilePath
+                    }
+
+                    Write-Verbose "Invoke task with" -Verbose
+                    $functionInput.Keys | ForEach-Object { Write-Host ("PARAMETER: `t'{0}' with value '{1}'" -f $_, $functionInput[$_].subString(0, [System.Math]::Min(50, $functionInput[$_].Length)) ) }
+
+                    Invoke-GeneralDeployment @functionInput -Verbose
+                  errorActionPreference: stop
+                  azurePowerShellVersion: LatestVersion
+                enabled: true
+
+  ## Image lifecycle management script
+  - deployment: Update_SessionHosts_with_new_image
+    dependsOn:
+    - ${{ if eq(variables['enableJobDeploySessionHosts'], true) }}:
+      - Deploy_WVDSessionHosts
+    - ${{ if ne(variables['SharedImageGalleryImageDefinitionID'], '') }}:
+      - Set_PipelineVariables
+    environment: Production
+    condition: |
+      and (
+        not(canceled()),
+        eq(variables['enableJobUpdateSessionHosts'], true),
+        in(dependencies.Deploy_WVDSessionHosts.result, '', 'Succeeded', 'Skipped')
+      )
+    timeoutInMinutes: 120
+    pool:
+      ${{ if ne(variables.vmImage, '') }}:
+          vmImage: $(vmImage)
+      ${{ if ne(variables.poolName, '') }}:
+          name: $(poolName)
+    variables:
+      CustomImageReferenceId: $[ dependencies.Set_PipelineVariables.outputs['Set_PipelineVariables.Set_CustomImageReferenceId_Task.CustomImageReferenceId'] ]  
+    strategy:
+        runOnce:
+          deploy:
+            steps:
+              - checkout: self
+              - powershell: |
+                  $reqModules = @('Az.DesktopVirtualization', 'OMSIngestionAPI')
+                  foreach($reqModule in $reqModules) {
+                    if(-not (Get-Module $reqModule -ListAvailable)) {
+                        Write-Verbose "Installing module [$reqModule]" -Verbose
+                        Install-Module $reqModule -Repository PSGallery -Force -Scope CurrentUser
+                    } else {
+                        Write-Verbose "Module $reqModule already installed" -Verbose
+                    }
+                  }
+                displayName: 'Install required module'
+              - task: AzurePowerShell@4
+                displayName: 'Run image lifecycle update via [$(serviceConnection)]'
+                name: ImageLifecycleUpdate
+                inputs:
+                  azureSubscription: $(serviceConnection)
+                  ScriptType: InlineScript
+                  inline: |
+                    Write-Verbose "Load function" -Verbose
+                    . '$(Build.SourcesDirectory)/$(orchestrationFunctionsPath)/GeneralDeployment/Invoke-UpdateHostPool.ps1'
+
+                    $functionInput = @{
+                      orchestrationFunctionsPath = Join-Path '$(Build.SourcesDirectory)' '$(orchestrationFunctionsPath)'  
+                      HostPoolName               = '$(HostPoolName)'
+                      HostPoolRGName             = '$(ResourceGroupName)'
+                      LogoffDeadline             = '$(LogoffDeadline)'
+                      LogOffMessageTitle         = '$(LogOffMessageTitle)'
+                      LogOffMessageBody          = '$(LogOffMessageBody)'
+                      UtcOffset                  = '$(UtcOffset)'
+                      CustomImageReferenceId     = '$(CustomImageReferenceId)'
+                      MarketplaceImageVersion    = '$(version)' 
+                      MarketplaceImagePublisher  = '$(publisher)'
+                      MarketplaceImageOffer      = '$(offer)'
+                      MarketplaceImageSku        = '$(sku)'
+                      MarketplaceImageLocation   = '$(imagelocation)'
+                      DeleteVMDeadline           = '$(DeleteVMDeadline)'
+                      LAWorkspaceName            = '$(LAWorkspaceName)'
+                    }
+
+                    Write-Verbose "Invoke task with" -Verbose
+                    $functionInput.Keys | ForEach-Object { Write-Verbose ("PARAMETER: `t'{0}' with value '{1}'" -f $_, $functionInput[$_]) -Verbose }
+
+                    Invoke-UpdateHostPool @functionInput -Verbose
+                  errorActionPreference: stop
+                  azurePowerShellVersion: LatestVersion
+                  pwsh: true
+                enabled: true

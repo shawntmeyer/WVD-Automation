@@ -1,0 +1,36 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "LogicAppName": {
+            "value": "AutoScale-bsd-wvd-cad-dev-hp"
+        },
+        "webhookURI": {
+            "reference": {
+                "keyVault": {
+                    "id": "/subscriptions/65862f1e-947f-4dd6-bd50-319d3c84eb36/resourceGroups/bsd-wvd-mgmt-eus-rg/providers/Microsoft.KeyVault/vaults/bsd-wvd-mgmt-kv"
+                },
+                "secretName": "WVDScalingWebhook-Uri"
+            }
+        },
+        "actionSettingsBody": {
+            "value": {
+                "ResourceGroupName": "bsd-wvd-cad-dev-hp-rg",
+                "HostPoolName": "bsd-wvd-cad-dev-hp",
+                "MaintenanceTagName": "MaintenanceMode",
+                "UtcOffset": "-5:00",
+                "BeginPeakTime": "6:00",
+                "EndPeakTime": "2:00",
+                "SessionThresholdPerCPU": ".25",
+                "MinimumNumberOfRDSH": "2",
+                "LimitSecondsToForceLogOffUser": "300",
+                "LogOffMessageTitle": "Logoff Message",
+                "LogOffMessageBody": "This session host is being shutdown by the auto scaling process. Please logoff by the deadline.",
+                "LAWorkspaceName": ""
+            }
+        },
+        "recurrenceInterval": {
+            "value": 15
+        }
+    }
+}

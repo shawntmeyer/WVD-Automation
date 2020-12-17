@@ -1,0 +1,121 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "vmNamePrefix": {
+            "value": "[sh01VmNamePrefix]"
+        },
+        "vmNumberOfInstances": {
+            "value": "[sh01VmNumberOfInstances]"
+        },
+        "vmInitialNumber": {
+            "value": "[sh01VmInitialNumber]"
+        },
+        "vmSize": {
+            "value": "[shVmSize]"
+        },
+        "osDisk": {
+            "value": {
+                "createOption": "fromImage",
+                "diskSizeGB": "128",
+                "managedDisk": {
+                    "storageAccountType": "Premium_LRS"
+                }
+            }
+        },
+        "adminUsername": {
+            "value": "[shAdminUsername]"
+        },
+        "adminPassword": {
+            "reference": {
+                "keyVault": {
+                    "id": "/subscriptions/[subscriptionId]/resourceGroups/[MgmtRGName]/providers/Microsoft.KeyVault/vaults/[wvdKvltName]"
+                },
+                "secretName": "localAdmin-Password"
+            }
+        },
+        "availabilitySetName": {
+            "value": ""
+        },
+        "subnetId": {
+            "value": "[shSubnetRef]"
+        },
+        "domainName": {
+            "value": "[shDomainName]"
+        },
+        "domainJoinUser": {
+            "value": "[shDomainJoinUserPrincipalName]"
+        },
+        "domainJoinPassword": {
+            "reference": {
+                "keyVault": {
+                    "id": "/subscriptions/[subscriptionId]/resourceGroups/[MgmtRGName]/providers/Microsoft.KeyVault/vaults/[wvdKvltName]"
+                },
+                "secretName": "[shDomainJoinUserName]-Password"
+            }
+        },
+        "domainJoinOU": {
+            "value": "[shDomainJoinOU]"
+        },
+        "dscConfiguration": {
+            "value": {
+                "settings": {
+                    "wmfVersion": "latest",
+                    "configuration": {
+                        "url": "https://wvdportalstorageblob.blob.core.windows.net/galleryartifacts/Configuration.zip",
+                        "script": "Configuration.ps1",
+                        "function": "AddSessionHost"
+                    },
+                    "configurationArguments": {
+                        "hostPoolName": "[hostPool01Name]"
+                    }
+                },
+                "protectedSettings": {
+                    "configurationArguments": {
+                        "registrationInfoToken": "<PopulatedInPipeline>" 
+                    }
+                }
+            }
+        },
+        "enablePublicIP": {
+            "value": false
+        },
+        "diagnosticLogsRetentionInDays": {
+            "value": 365
+        },
+        "diagnosticStorageAccountId": {
+            "value": ""
+        },
+        "workspaceId": {
+            "value": ""
+        },
+        "eventHubAuthorizationRuleId": {
+            "value": ""
+        },
+        "eventHubName": {
+            "value": ""
+        },
+        "lockForDeletion": {
+            "value": false
+        },
+        "tags": {
+            "value": {}
+        },
+        "windowsScriptExtensionFileData": {
+            "value": [
+                {
+                    "uri": "https://[assetsSaName].blob.core.windows.net/wvdscripts/scriptExtensionMasterInstaller.ps1",
+                    "storageAccountId": "/subscriptions/[subscriptionId]/resourceGroups/[MgmtRGName]/providers/Microsoft.Storage/storageAccounts/[assetsSaName]"
+                },
+                {
+                    "uri": "https://[assetsSaName].blob.core.windows.net/wvdscripts/001-FSLogix.zip",
+                    "storageAccountId": "/subscriptions/[subscriptionId]/resourceGroups/[MgmtRGName]/providers/Microsoft.Storage/storageAccounts/[assetsSaName]"
+                }
+                //{
+                //    "uri": "https://[assetsSaName].blob.core.windows.net/wvdscripts/002-NotepadPP.zip",
+                //    "storageAccountId": "/subscriptions/[subscriptionId]/resourceGroups/[MgmtRGName]/providers/Microsoft.Storage/storageAccounts/[assetsSaName]"
+                //}
+            ]
+        }
+    }
+}

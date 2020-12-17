@@ -1,0 +1,31 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "appGroupName": {
+            "value": "bsd-wvd-admin-dag"
+        },
+        "appGroupType": {
+            "value": "Desktop"
+        },
+        "hostpoolName": {
+            "value": "bsd-wvd-admin-hp"
+        },
+        "appGroupFriendlyName": {
+            "value": "Admin Desktop"
+        },
+        "appGroupDescription": {
+            "value": "Admin Desktop"
+        },
+        "roleAssignments": {
+            "value": [
+                {
+                    "roleDefinitionIdOrName": "Desktop Virtualization User",
+                    "principalIds": [
+                        "c3544243-05eb-48a6-8790-92d608dc9166" // WVD - Admins
+                    ]
+                }
+            ]
+        }
+    }
+}

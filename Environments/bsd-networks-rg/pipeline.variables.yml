@@ -1,0 +1,65 @@
+variables:
+  resourceGroupName: 'network-hub-rg'
+  environmentPath: Environments (Artifacts)/network-hub-rg
+
+  location: 'WestUS'
+  artifactFeedPath: '$(System.Teamproject)/Components'
+
+  packagePath: ModulePackages
+  downloadDirectory: $(Build.SourcesDirectory)/$(packagePath)
+
+  # Environment-Specific
+  Production-vmImage: 'ubuntu-latest'
+  Production-poolName: ''
+  Production-serviceConnection: 'Stardust SP Connection'
+
+  DEV-vmImage: 'ubuntu-latest'
+  DEV-poolName: ''
+  DEV-serviceConnection: 'Stardust SP Connection'
+
+  PRD-vmImage: 'ubuntu-latest'
+  PRD-poolName: ''
+  PRD-serviceConnection: 'Stardust SP Connection'
+
+  ### Artifacts
+  RGModuleName: 'ResourceGroup'
+  RGModuleVersion: '*'
+
+  VnetModuleName: 'VirtualNetwork'
+  VnetModuleVersion: '*'
+
+  VnetPeeringModuleName: 'VirtualNetworkPeering'
+  VnetPeeringModuleVersion: '*'
+
+  RouteTablesModuleName: 'RouteTables'
+  RouteTablesModuleVersion: '*'
+
+  NsgModuleName: 'NetworkSecurityGroups'
+  NsgModuleVersion: '*'
+
+  AzureBastionModuleName: 'AzureBastion'
+  AzureBastionModuleVersion: '*'
+
+  DdosProtectionPlansModuleName: 'DdosProtectionPlans'
+  DdosProtectionPlansModuleVersion: '*'
+
+  ExpressRouteCircuitModuleName: 'ExpressRouteCircuit'
+  ExpressRouteCircuitModuleVersion: '*'
+
+  PublicIpPrefixesModuleName: 'PublicIpPrefixes'
+  PublicIpPrefixesModuleVersion: '*'
+
+  VirtualNetworkGatewayModuleName: 'VirtualNetworkGateway'
+  VirtualNetworkGatewayModuleVersion: '*'
+
+  VirtualNetworkGatewayConnectionModuleName: 'VirtualNetworkGatewayConnection'
+  VirtualNetworkGatewayConnectionModuleVersion: '*'
+
+  LocalNetworkGatewayModuleName: 'LocalNetworkGateway'
+  LocalNetworkGatewayModuleVersion: '*'
+
+  NetworkWatcherModuleName: 'NetworkWatcher'
+  NetworkWatcherModuleVersion: '*'
+
+  StorageAccountsModuleName: 'StorageAccounts'
+  StorageAccountsModuleVersion: '*'

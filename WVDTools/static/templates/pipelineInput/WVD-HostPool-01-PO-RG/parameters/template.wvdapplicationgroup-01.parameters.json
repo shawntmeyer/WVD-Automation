@@ -1,0 +1,52 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "appGroupName": {
+            "value": "[remAppGroup01Name]"
+        },
+        "appGroupType": {
+            "value": "[remAppGroup01Type]"
+        },
+        "hostpoolName": {
+            "value": "[hostPool01Name]"
+        },
+        "appGroupFriendlyName": {
+            "value": ""
+        },
+        "appGroupDescription": {
+            "value": ""
+        },
+        "roleAssignments": {
+            "value": [
+                {
+                    "roleDefinitionIdOrName": "Desktop Virtualization User",
+                    "principalIds": [
+                        "[group01]"
+                    ]
+                }
+            ]
+        },
+        "diagnosticLogsRetentionInDays": {
+            "value": 365
+        },
+        "diagnosticStorageAccountId": {
+            "value": ""
+        },
+        "workspaceId": {
+            "value": ""
+        },
+        "eventHubAuthorizationRuleId": {
+            "value": ""
+        },
+        "eventHubName": {
+            "value": ""
+        },
+        "lockForDeletion": {
+            "value": false
+        },
+        "tags": {
+            "value": {}
+        }
+    }
+}

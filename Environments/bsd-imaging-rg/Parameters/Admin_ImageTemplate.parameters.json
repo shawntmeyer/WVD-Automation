@@ -1,0 +1,121 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "imageTemplateName": {
+            "value": "Admin"
+        },
+        "userMsiName": {
+            "value": "BSDimagingMSI"
+        },
+        "buildTimeoutInMinutes": {
+            "value": 180
+        },
+        "vmSize": {
+            "value": "Standard_D2_v3"
+        },
+        "osDiskSizeGB": {
+            "value": 127
+        },
+        "subnetId": {
+            "value": "/subscriptions/65862f1e-947f-4dd6-bd50-319d3c84eb36/resourceGroups/bsd-networks-eus-rg/providers/Microsoft.Network/virtualNetworks/bsd-wvd-eus-vnet/subnets/imaging-sn"
+        },
+        "imageSource": {
+            "value": {
+                "type": "PlatformImage",
+                "publisher": "MicrosoftWindowsDesktop",
+                "offer": "Windows-10",
+                "sku": "20h2-evd",
+                "version": "latest"
+            }
+        },
+        "customizationSteps": {
+            "value": [
+                {
+                    "type": "PowerShell",
+                    "name": "Create_BuildArtifacts_Dir",
+                    "inline": [
+                        "New-Item -Path 'c:\\BuildArtifacts' -ItemType Directory -Force"
+                    ],
+                    "runElevated": true
+                },
+                { 
+                    "type": "PowerShell",
+                    "name":   "InvokeCustomizations",  
+                    "scriptUri": "https://bsdimageassetsstore.blob.core.windows.net/imagesources/Admin_ImageCustomization.ps1",
+                    "runElevated": true
+                },
+                {
+                    "type": "WindowsUpdate",
+                    "searchCriteria": "IsInstalled=0",
+                    "filters": [
+                        "exclude:$_.Title -like '*Preview*'",
+                        "include:$true"
+                    ],
+                    "updateLimit": 40
+                },
+                {
+                    "type": "PowerShell",
+                    "name": "Add_Mode_VM_Switch_to_Sysprep",
+                    "inline": [
+                        "$DeprovisioningScript = \"$env:SystemDrive\\DeprovisioningScript.ps1\"",
+                        "If (Test-Path $DeprovisioningScript) {",
+                        "    Write-Output \"Adding the '/mode:VM' switch to the sysprep command line in the deprovisioning script.\"",
+                        "    (Get-Content $DeprovisioningScript) | ForEach-Object { if ($_ -like '*System32\\Sysprep\\Sysprep.exe*') { \"$_ /mode:vm\" } else { $_ } } | Set-Content $DeprovisioningScript",
+                        "}"
+                    ]
+                },
+                {
+                    "type": "PowerShell",
+                    "name": "CleanupImage",
+                    "inline": [
+                        "Write-Output 'Deleting Build Artifacts Directory'.",
+                        "Remove-Item -Path 'c:\\BuildArtifacts\\*' -Recurse -ErrorAction SilentlyContinue",
+                        "Remove-Item -Path 'c:\\BuildArtifacts' -Recurse -ErrorAction SilentlyContinue",
+                        "Write-Output 'Deleting Windows Update downloads.'",
+                        "Get-Service -DisplayName 'Windows Update' | Stop-Service -Force",
+                        "Remove-Item -Path 'c:\\Windows\\SoftwareDistribution' -Recurse -Force -ErrorAction SilentlyContinue",
+                        "Write-Output 'Cleaning out c:\\windows\\temp'",
+                        "Get-ChildItem -Path 'c:\\Windows\\Temp' -File -Exclude '*.ps1' -Recurse -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue",
+                        "Get-ChildItem -Path 'c:\\Windows\\Temp' -Directory -Recurse -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue",
+                        "Write-Output 'Removing .tmp, .etl, .evtx, thumbcache*.db files not in use'",
+                        "Get-ChildItem -Path c:\\ -Include *.tmp, *.dmp, *.etl, *.evtx, thumbcache*.db -File -Recurse -Force -ErrorAction SilentlyContinue | Remove-Item -ErrorAction SilentlyContinue",
+                        "Write-Output 'Cleaning up WER report archive.'",
+                        "Remove-Item -Path $env:ProgramData\\Microsoft\\Windows\\WER\\Temp\\* -Recurse -Force -ErrorAction SilentlyContinue",
+                        "Remove-Item -Path $env:ProgramData\\Microsoft\\Windows\\WER\\ReportArchive\\* -Recurse -Force -ErrorAction SilentlyContinue",
+                        "Remove-Item -Path $env:ProgramData\\Microsoft\\Windows\\WER\\ReportQueue\\* -Recurse -Force -ErrorAction SilentlyContinue",
+                        "Write-Output 'Removing Retail Demo content.'",
+                        "Get-ChildItem -Path $env:ProgramData\\Microsoft\\Windows\\RetailDemo\\* -Recurse -Force -ErrorAction SilentlyContinue | Remove-Item -Recurse -ErrorAction SilentlyContinue",
+                        "Write-Output 'Clearing BranchCache.'",
+                        "Clear-BCCache -Force -ErrorAction SilentlyContinue",
+                        "Write-Output 'Deleting the Delivery Optimization Cache.'",
+                        "Delete-DeliveryOptimizationCache -Force",
+                        "Write-Output 'Emptying all Recycle Bins.'",
+                        "Clear-RecycleBin -Force -ErrorAction SilentlyContinue"
+                    ],
+                    "runElevated": true
+                },
+                {
+                    "type": "WindowsRestart",
+                    "restartCommand": "shutdown /r /f /t 0", 
+                    "restartCheckCommand": "",
+                    "restartTimeout": "5m"
+                }
+            ]
+        },
+        "managedImageName": {
+            "value": ""
+        },
+        "unManagedImageName": {
+            "value": ""
+        },
+        "sigImageDefinitionId": {
+            "value": "/subscriptions/65862f1e-947f-4dd6-bd50-319d3c84eb36/resourceGroups/bsd-imaging-rg/providers/Microsoft.Compute/galleries/CustomerNameSharedImages/images/Admin"
+        },
+        "imageReplicationRegions": {
+            "value": [
+                "EastUS"
+            ]
+        }
+    }
+}

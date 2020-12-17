@@ -1,0 +1,122 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"networkSecurityGroupName": {
+			"value": "bsd-wvd-eus-vnet-imaging-sn-nsg"
+		},
+		"networkSecurityGroupSecurityRules": {
+			"value": [
+				{
+					"name": "Allow--RDP--Inbound",
+					"properties": {
+						"description": "Allow inbound TCP 3389",
+						"protocol": "TCP",
+						"sourcePortRange": "*",
+						"destinationPortRange": "3389",
+						"sourceAddressPrefix": "*",
+						"destinationAddressPrefix": "*",
+						"access": "Allow",
+						"priority": 100,
+						"direction": "Inbound",
+						"sourcePortRanges": [
+						],
+						"destinationPortRanges": [
+						],
+						"sourceAddressPrefixes": [
+						],
+						"destinationAddressPrefixes": [
+						],
+						"sourceApplicationSecurityGroupIds": [			
+						],
+						"destinationApplicationSecurityGroupIds": [
+						]
+					}
+				},
+				{
+					"name": "Allow--WVD-Outbound",
+					"properties": {
+						"description": "Allow Session Host to WVD PaaS component",
+						"protocol": "TCP",
+						"sourcePortRange": "*",
+						"destinationPortRange": "443",
+						"sourceAddressPrefix": "VirtualNetwork",
+						"destinationAddressPrefix": "WindowsVirtualDesktop",
+						"access": "Allow",
+						"priority": 1000,
+						"direction": "Outbound",
+						"sourcePortRanges": [
+						],
+						"destinationPortRanges": [
+						],
+						"sourceAddressPrefixes": [
+						],
+						"destinationAddressPrefixes": [
+						],
+						"destinationApplicationSecurityGroups": [
+						],
+						"sourceApplicationSecurityGroupIds": [			
+						],
+						"destinationApplicationSecurityGroupIds": [
+						]
+					}
+				},
+				{
+					"name": "Allow--AzureCloud--Outbound",
+					"properties": {
+						"description": "Allow outbound TCP 443 connections to Azure",
+						"protocol": "TCP",
+						"sourcePortRange": "*",
+						"destinationPortRange": "443",
+						"sourceAddressPrefix": "*",
+						"destinationAddressPrefix": "AzureCloud",
+						"access": "Allow",
+						"priority": 1010,
+						"direction": "Outbound",
+						"sourcePortRanges": [
+						],
+						"destinationPortRanges": [
+						],
+						"sourceAddressPrefixes": [
+						],
+						"destinationAddressPrefixes": [
+						],
+						"sourceApplicationSecurityGroupIds": [
+						],
+						"destinationApplicationSecurityGroupIds": [
+						]
+					}
+				},
+				{
+					"name": "Allow--AzureKMS--Outbound",
+					"properties": {
+						"description": "Allow outbound to Azure KMS",
+						"protocol": "*",
+						"sourcePortRange": "*",
+						"destinationPortRange": "1688",
+						"sourceAddressPrefix": "VirtualNetwork",
+						"destinationAddressPrefix": "23.102.135.246",
+						"access": "Allow",
+						"priority": 1020,
+						"direction": "Outbound",
+						"sourcePortRanges": [
+						],
+						"destinationPortRanges": [
+						],
+						"sourceAddressPrefixes": [
+						],
+						"destinationAddressPrefixes": [
+						],
+						"sourceApplicationSecurityGroupIds": [
+						],
+						"destinationApplicationSecurityGroupIds": [
+						]
+					}
+				}
+			]
+		},
+		"tags": {
+			"value": { "Environment":"Production" }
+		}
+	}
+}

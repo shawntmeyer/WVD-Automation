@@ -1,0 +1,66 @@
+#######################################################################
+##                                NOTE                               ##
+## ------------------------------------------------------------------##
+## - These variables are used to configure the pipeline and provide  ##
+##   variables to pipeline scripts                                   ##
+## - Parameters used for resource deployments are located in the     ##
+##   parameter files in the '.\Parameters' folder                    ##
+#######################################################################
+
+variables:
+
+#############
+## GENERAL ##
+#############
+#region general
+  orchestrationPath: Environments
+  orchestrationFunctionsPath: OrchestrationSources/SharedDeploymentFunctions
+  vmImage: 'ubuntu-latest'
+  poolName: ''
+  serviceConnection: 'Stardust SP Connection'
+  artifactFeedPath: '$(System.Teamproject)/Components'
+  packagePath: ModulePackages
+  
+#region specific
+  rgFolderPath: '$(orchestrationPath)/bsd-wvd-profiles-eus-rg'
+  location: eastus
+#endregion
+
+#######################
+## PIPELINE CONTROLS ##
+#######################
+#region pipeline controls
+
+# Pipeline Name
+# -------------
+  pipelineName: 'WVD Profile StorageAccount deployment'
+
+# Deployed Module Specs
+# ---------------------
+  resourceGroupModuleName: ResourceGroup
+  resourceGroupModuleVersion: '*'
+
+  storageAccountModuleName: StorageAccounts
+  storageAccountModuleVersion: '*'
+
+# Jobs
+# ----
+  enableJobDeployResourceGroup: true # To enable/disable job
+  enableJobDeployAdminProfilesStorageAccount: true # To enable/disable job
+  enableJobDeployCADProfilesStorageAccount: true # To enable/disable job
+  enableJobDeployDevProfilesStorageAccount: true # To enable/disable job
+
+######################
+## SCRIPT VARIABLES ##
+######################
+#region script variables
+
+# ResourceGroup related
+# ---------------------
+  resourcegroupname: 'bsd-wvd-profiles-eus-rg'
+
+# FSLogix related - IdentityApproach (AD or AADDS)
+# ------------------------------------------------
+  # Controls the way the authentication towards the FSLogix file shares is set up
+  identityApproach: 'AD'
+#endregion

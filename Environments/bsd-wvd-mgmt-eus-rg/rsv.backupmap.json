@@ -1,0 +1,12 @@
+{
+    "fileSharePolicyMaps": [
+        {
+            "policyName": "FSLogixProfilesBackupPolicy",
+            "items": [
+                {
+                    "StorageAccountName": "wvdhxgneus"
+                }
+            ]
+        }
+    ]
+}

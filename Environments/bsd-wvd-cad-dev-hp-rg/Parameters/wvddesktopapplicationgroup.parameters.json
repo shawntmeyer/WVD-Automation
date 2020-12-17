@@ -1,0 +1,32 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "appGroupName": {
+            "value": "bsd-wvd-cad-dev-dag"
+        },
+        "appGroupType": {
+            "value": "Desktop"
+        },
+        "hostpoolName": {
+            "value": "bsd-wvd-cad-dev-hp"
+        },
+        "appGroupFriendlyName": {
+            "value": "Developer Desktop"
+        },
+        "appGroupDescription": {
+            "value": "HxGN Developer Desktop"
+        },
+        "roleAssignments": {
+            "value": [
+                {
+                    "roleDefinitionIdOrName": "Desktop Virtualization User",
+                    "principalIds": [
+                        "84e0314d-b8d2-4c15-aed0-7d632a7dd3a5", // WVD - CAD - Devs
+                        "c3544243-05eb-48a6-8790-92d608dc9166" // WVD - Admins
+                    ]
+                }
+            ]
+        }
+    }
+}

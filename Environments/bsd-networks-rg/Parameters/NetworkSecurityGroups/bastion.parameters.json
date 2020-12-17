@@ -1,0 +1,126 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"networkSecurityGroupName": {
+			"value": "hubnet-nsgbastion"
+		},
+		"networkSecurityGroupSecurityRules": {
+			"value": [
+				{
+					"name": "AllowInBoundTcp443FromGatewayManager",
+					"properties": {
+						"description": "Allow inbound TCP 443 connections from Gateway Manager service",
+						"protocol": "TCP",
+						"sourcePortRange": "*",
+						"destinationPortRange": "",
+						"sourceAddressPrefix": "GatewayManager",
+						"destinationAddressPrefix": "*",
+						"access": "Allow",
+						"priority": 100,
+						"direction": "Inbound",
+						"sourcePortRanges": [
+						],
+						"destinationPortRanges": [
+							"443",
+							"4443"
+						],
+						"sourceAddressPrefixes": [
+						],
+						"destinationAddressPrefixes": [
+						],
+						"sourceApplicationSecurityGroupIds": [			
+						],
+						"destinationApplicationSecurityGroupIds": [
+						]
+					}
+				},
+				{
+					"name": "AllowInBoundTcp443FromInternet",
+					"properties": {
+						"description": "Allow inbound TCP 443 connections from the Internet",
+						"protocol": "TCP",
+						"sourcePortRange": "*",
+						"destinationPortRange": "443",
+						"sourceAddressPrefix": "Internet",
+						"destinationAddressPrefix": "*",
+						"access": "Allow",
+						"priority": 101,
+						"direction": "Inbound",
+						"sourcePortRanges": [
+						],
+						"destinationPortRanges": [
+						],
+						"sourceAddressPrefixes": [
+						],
+						"destinationAddressPrefixes": [
+						],
+						"destinationApplicationSecurityGroups": [
+						],
+						"sourceApplicationSecurityGroupIds": [			
+						],
+						"destinationApplicationSecurityGroupIds": [
+						]
+					}
+				},
+				{
+					"name": "AllowOutBoundTcp443ToAzure",
+					"properties": {
+						"description": "Allow outbound TCP 443 connections to Azure",
+						"protocol": "TCP",
+						"sourcePortRange": "*",
+						"destinationPortRange": "443",
+						"sourceAddressPrefix": "*",
+						"destinationAddressPrefix": "AzureCloud",
+						"access": "Allow",
+						"priority": 100,
+						"direction": "Outbound",
+						"sourcePortRanges": [
+						],
+						"destinationPortRanges": [
+						],
+						"sourceAddressPrefixes": [
+						],
+						"destinationAddressPrefixes": [
+						],
+						"sourceApplicationSecurityGroupIds": [
+						],
+						"destinationApplicationSecurityGroupIds": [
+						]
+					}
+				},
+				{
+					"name": "AllowOutBoundSshAndRdpToVnets",
+					"properties": {
+						"description": "Allow outbound SSH and RDP connections to Vnets",
+						"protocol": "TCP",
+						"sourcePortRange": "*",
+						"destinationPortRange": "",
+						"sourceAddressPrefix": "*",
+						"destinationAddressPrefix": "VirtualNetwork",
+						"access": "Allow",
+						"priority": 101,
+						"direction": "Outbound",
+						"sourcePortRanges": [
+						],
+						"destinationPortRanges": [
+							"22",
+							"3389"
+						],
+						"sourceAddressPrefixes": [
+						],
+						"destinationAddressPrefixes": [
+						],
+						"sourceApplicationSecurityGroupIds": [
+						],
+						"destinationApplicationSecurityGroupIds": [
+						]
+					}
+				}
+			]
+		},
+		"tags": {
+			"value": { "Demo":"HubNetwork" }
+		}
+	}
+}

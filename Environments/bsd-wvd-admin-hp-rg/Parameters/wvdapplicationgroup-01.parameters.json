@@ -1,0 +1,31 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "appGroupName": {
+            "value": "test-cse-rag01"
+        },
+        "appGroupType": {
+            "value": "RemoteApp"
+        },
+        "hostpoolName": {
+            "value": "test-cse-hp"
+        },
+        "appGroupFriendlyName": {
+            "value": ""
+        },
+        "appGroupDescription": {
+            "value": ""
+        },
+        "roleAssignments": {
+            "value": [
+                {
+                    "roleDefinitionIdOrName": "Desktop Virtualization User",
+                    "principalIds": [
+                        "956f4733-0492-4c19-82c8-b4715df8c0ea" // WVD Admins
+                    ]
+                }
+            ]
+        }
+    }
+}

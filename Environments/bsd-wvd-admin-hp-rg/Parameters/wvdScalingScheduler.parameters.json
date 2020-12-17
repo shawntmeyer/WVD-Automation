@@ -1,0 +1,36 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "LogicAppName": {
+            "value": "AutoScale-bsd-wvd-admin-hp"
+        },
+        "webhookURI": {
+            "reference": {
+                "keyVault": {
+                    "id": "/subscriptions/65862f1e-947f-4dd6-bd50-319d3c84eb36/resourceGroups/bsd-wvd-mgmt-eus-rg/providers/Microsoft.KeyVault/vaults/bsd-wvd-mgmt-kv"
+                },
+                "secretName": "WVDScalingWebhook-Uri"
+            }
+        },
+        "actionSettingsBody": {
+            "value": {
+                "ResourceGroupName": "bsd-wvd-admin-hp-rg",
+                "HostPoolName": "bsd-wvd-admin-hp",
+                "MaintenanceTagName": "MaintenanceMode",
+                "UtcOffset": "-5:00",
+                "BeginPeakTime": "7:00",
+                "EndPeakTime": "18:00",
+                "SessionThresholdPerCPU": "1",
+                "MinimumNumberOfRDSH": "1",
+                "LimitSecondsToForceLogOffUser": "300",
+                "LogOffMessageTitle": "Logoff Warning",
+                "LogOffMessageBody": "This system is shutting down for nightly maintenance. Please logoff. You may log back on immediately to continue your work.",
+                "LAWorkspaceName": ""
+            }
+        },
+        "recurrenceInterval": {
+            "value": 180
+        }
+    }
+}

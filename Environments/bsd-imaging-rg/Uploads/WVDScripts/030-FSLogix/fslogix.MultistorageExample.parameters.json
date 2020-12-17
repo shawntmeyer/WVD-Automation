@@ -1,0 +1,123 @@
+{
+    "fslogix": [
+        {
+            "installFSLogix": true,
+            "configureFSLogix": true,
+            "FSLogixRegistrySettings": [
+                {
+					"keyPath": "HKLM:\\Software\\FSLogix\\Profiles",
+					"keyValues": [
+						{
+							"Name": "Enabled",
+							"Type": "DWORD",
+							"Value": "1"
+						},
+						{
+							"Name": "DeleteLocalProfileWhenVHDShouldApply",
+							"Type": "DWORD",
+							"Value": "1"
+						},
+						{
+							"Name": "FlipFlopProfileDirectoryName",
+							"Type": "DWORD",
+							"Value": "1"
+						}
+					]
+				},
+				{
+					"keyPath": "HKLM:\\Software\\FSLogix\\Profiles\\ObjectSpecific\\<ReplaceWith-UserGroup1SID>",
+					"keyValues": [
+						{
+							"Name": "VHDLocations",
+							"Type": "MultiString",
+							"Value": "\\\\<ReplaceWith-profilesStorageAccountName01>.file.core.windows.net\\<ReplaceWith-FileShareName11>"
+						}
+					]
+				},
+				{
+					"keyPath": "HKLM:\\Software\\FSLogix\\Profiles\\ObjectSpecific\\<ReplaceWith-UserGroup2SID>",
+					"keyValues": [
+						{
+							"Name": "VHDLocations",
+							"Type": "MultiString",
+							"Value": "\\\\<ReplaceWith-profilesStorageAccountName02>.file.core.windows.net\\<ReplaceWith-FileShareName21>"
+						}
+					]
+				},
+				{
+					"keyPath": "HKLM:\\Software\\Policies\\FSLogix\\ODFC",
+					"keyValues": [
+						{
+							"Name": "Enabled",
+							"Type": "DWORD",
+							"Value": "1"
+						},
+						{
+							"Name": "DeleteLocalProfileWhenVHDShouldApply",
+							"Type": "DWORD",
+							"Value": "1"
+						},
+						{
+							"Name": "FlipFlopProfileDirectoryName",
+							"Type": "DWORD",
+							"Value": "1"
+						}
+					]
+				},
+                {
+					"keyPath": "HKLM:\\Software\\Policies\\FSLogix\\ODFC\\ObjectSpecific\\<ReplaceWith-UserGroup1SID>",
+					"keyValues": [
+						{
+							"Name": "VHDLocations",
+							"Type": "MultiString",
+							"Value": "\\\\<ReplaceWith-profilesStorageAccountName01>.file.core.windows.net\\<ReplaceWith-FileShareName12>"
+						}
+					]
+				},
+				{
+					"keyPath": "HKLM:\\Software\\Policies\\FSLogix\\ODFC\\ObjectSpecific\\<ReplaceWith-UserGroup2SID>",
+					"keyValues": [
+						{
+							"Name": "VHDLocations",
+							"Type": "MultiString",
+							"Value": "\\\\<ReplaceWith-profilesStorageAccountName02>.file.core.windows.net\\<ReplaceWith-FileShareName22>"
+						}
+					]
+				}			
+			],
+			"FSLogixLocalGroupsSettings": [
+            ],
+            "configureNTFSPermissions": true,
+			"NTFSSettings": [
+				{
+					"fileShareStorageAccountName": "<ReplaceWith-profilesStorageAccountName01>",
+					"fileShareName": "<ReplaceWith-FileShareName11>",
+					"domain": "<ReplaceWith-Domain>",
+					"targetGroup": "<ReplaceWith-UserGroup1>",
+					"driveLetter": "X"
+				},
+				{
+					"fileShareStorageAccountName": "<ReplaceWith-profilesStorageAccountName01>",
+					"fileShareName": "<ReplaceWith-FileShareName12>",
+					"domain": "<ReplaceWith-Domain>",
+					"targetGroup": "<ReplaceWith-UserGroup1>",
+					"driveLetter": "Y"
+				},
+				{
+					"fileShareStorageAccountName": "<ReplaceWith-profilesStorageAccountName02>",
+					"fileShareName": "<ReplaceWith-FileShareName21>",
+					"domain": "<ReplaceWith-Domain>",
+					"targetGroup": "<ReplaceWith-UserGroup2>",
+					"driveLetter": "W"
+				},
+				{
+					"fileShareStorageAccountName": "<ReplaceWith-profilesStorageAccountName02>",
+					"fileShareName": "<ReplaceWith-FileShareName22>",
+					"domain": "<ReplaceWith-Domain>",
+					"targetGroup": "<ReplaceWith-UserGroup2>",
+					"driveLetter": "Z"
+				}
+			]
+        }
+    ]
+}

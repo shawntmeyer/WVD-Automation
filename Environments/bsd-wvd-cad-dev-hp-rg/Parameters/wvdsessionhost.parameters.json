@@ -1,0 +1,103 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "vmNamePrefix": {
+      "value": "WVD-DEV-"
+    },
+    "vmNumberOfInstances": {
+      "value": 7
+    },
+    "vmInitialNumber": {
+      "value": 1
+    },
+    "vmSize": {
+      "value": "Standard_b2ms"
+    },
+    "osDisk": {
+      "value": {
+        "createOption": "fromImage",
+        "diskSizeGB": "128",
+        "managedDisk": {
+          "storageAccountType": "Premium_LRS"
+        }
+      }
+    },
+    "adminUsername": {
+      "value": "localadmin"
+    },
+    "adminPassword": {
+      "reference": {
+        "keyVault": {
+          "id": "/subscriptions/65862f1e-947f-4dd6-bd50-319d3c84eb36/resourceGroups/bsd-wvd-mgmt-eus-rg/providers/Microsoft.KeyVault/vaults/bsd-wvd-mgmt-kv"
+        },
+        "secretName": "localAdmin-Password"
+      }
+    },
+    "availabilitySetName": {
+      "value": "bsd-wvd-cad-dev-as"
+    },
+    "nicConfigurations": {
+      "value": [
+        {
+          "nicSuffix": "-nic-01",
+          "ipConfigurations": [
+            {
+              "name": "ipconfig1",
+              "subnetId": "/subscriptions/65862f1e-947f-4dd6-bd50-319d3c84eb36/resourceGroups/BSD-NETWORKS-EUS-RG/providers/Microsoft.Network/virtualNetworks/bsd-wvd-eus-vnet/subnets/wvd-cad-dev-hp-sn"
+            }
+          ]
+        }
+      ]
+    },
+    "domainName": {
+      "value": "core.tbl.com"
+    },
+    "domainJoinUser": {
+      "value": "wvdjoin@core.tbl.com"
+    },
+    "domainJoinPassword": {
+      "reference": {
+        "keyVault": {
+          "id": "/subscriptions/65862f1e-947f-4dd6-bd50-319d3c84eb36/resourceGroups/bsd-wvd-mgmt-eus-rg/providers/Microsoft.KeyVault/vaults/bsd-wvd-mgmt-kv"
+        },
+        "secretName": "WVDJoin-Password"
+      }
+    },
+    "domainJoinOU": {
+      "value": "OU=Dev; OU=Computers; OU=WVD; DC=core; DC=tbl; DC=com"
+    },
+    "domainJoinRestart":{
+      "value": true
+    },
+    "windowsConfiguration": {
+      "value": {
+        "timeZone": "Eastern Standard Time"
+      }
+    },
+    "dscConfiguration": {
+      "value": {
+        "settings": {
+          "wmfVersion": "latest",
+          "configuration": {
+            "url": "https://wvdportalstorageblob.blob.core.windows.net/galleryartifacts/Configuration.zip",
+            "script": "Configuration.ps1",
+            "function": "AddSessionHost"
+          },
+          "configurationArguments": {
+            "hostPoolName": "bsd-wvd-cad-dev-hp"
+          }
+        },
+        "protectedSettings": {
+          "configurationArguments": {
+            "registrationInfoToken": "<PopulatedInPipeline>"
+          }
+        }
+      }
+    },
+    "windowsScriptExtensionFileData": {
+      "value": [
+      ]
+    }
+  }
+}

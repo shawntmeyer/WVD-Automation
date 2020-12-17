@@ -1,0 +1,437 @@
+name: $(pipelineName)
+
+variables:
+- template: variables.yml
+
+trigger: none
+
+stages:
+- stage: Production
+  jobs:
+  ## Resource Group
+  - deployment: Deploy_MgmtResourceGroup
+    dependsOn: ''
+    environment: Production
+    condition: | 
+      and(
+        not(canceled()), 
+        eq(variables['enableJobDeployResourceGroup'], true)
+      )
+    timeoutInMinutes: 120
+    pool:
+      ${{ if ne(variables.vmImage, '') }}:
+          vmImage: $(vmImage)
+      ${{ if ne(variables.poolName, '') }}:
+          name: $(poolName)
+    strategy:
+        runOnce:
+          deploy:
+            steps:
+              - checkout: self
+              - template: ../.templates/pipeline.steps.artifact.yml
+                parameters:
+                  moduleName: '$(resourceGroupModuleName)'
+                  moduleVersion: '$(resourceGroupModuleVersion)'
+              - task: AzurePowerShell@4
+                displayName: 'Deploy module [$(resourceGroupModuleName)] version [$($resourceGroupModuleVersion)] in [$(resourcegroupname)] via [$(serviceConnection)]'
+                name: Deploy_ResourceGroup_Task_01
+                inputs:
+                  azureSubscription: $(serviceConnection)
+                  ScriptType: InlineScript
+                  inline: |
+                    Write-Verbose "Load function" -Verbose
+                    . '$(Build.Repository.LocalPath)/$(orchestrationFunctionsPath)/GeneralDeployment/Invoke-GeneralDeployment.ps1'
+
+                    $parameterFilePath = Join-Path '$(Build.Repository.LocalPath)' '$(rgFolderPath)/Parameters/resourcegroup.parameters.json'
+                    $functionInput = @{
+                      location          = '$(location)'
+                      modulePackagePath = Join-Path '$(downloadDirectory)' '$(resourceGroupModuleName)'
+                      parameterFilePath = $parameterFilePath
+                    }
+
+                    Write-Verbose "Invoke task with $functionInput" -Verbose
+                    $functionInput.Keys | ForEach-Object { Write-Verbose ("PARAMETER: `t'{0}' with value '{1}'" -f $_, $functionInput[$_]) -Verbose }
+
+                    Invoke-GeneralDeployment @functionInput -Verbose
+                  errorActionPreference: stop
+                  azurePowerShellVersion: LatestVersion
+                enabled: true
+
+  ## Key Vault
+  - deployment: Deploy_WVDKeyVault
+    dependsOn:
+    - ${{ if eq(variables['enableJobDeployResourceGroup'], true) }}:
+      - Deploy_MgmtResourceGroup
+    environment: Production
+    condition: |
+      and (
+        not(canceled()),
+        eq(variables['enableJobDeployWVDKeyVault'], true),
+        in(dependencies.Deploy_MgmtResourceGroup.result, '', 'Succeeded', 'Skipped')
+      )
+    timeoutInMinutes: 120
+    pool:
+      ${{ if ne(variables.vmImage, '') }}:
+          vmImage: $(vmImage)
+      ${{ if ne(variables.poolName, '') }}:
+          name: $(poolName)
+    strategy:
+        runOnce:
+          deploy:
+            steps:
+              - checkout: self
+              - template: ../.templates/pipeline.steps.artifact.yml
+                parameters:
+                  moduleName: '$(keyVaultModuleName)'
+                  moduleVersion: '$(keyVaultModuleVersion)'
+              - task: AzurePowerShell@4
+                displayName: 'Deploy module [$(keyVaultModuleName)] version [$(keyVaultModuleVersion)] in [$(resourcegroupname)] via [$(serviceConnection)]'
+                name: Deploy_KeyVault_Task
+                inputs:
+                  azureSubscription: $(serviceConnection)
+                  ScriptType: InlineScript
+                  inline: |
+                    Write-Verbose "Load function" -Verbose
+                    . '$(Build.Repository.LocalPath)/$(orchestrationFunctionsPath)/GeneralDeployment/Invoke-GeneralDeployment.ps1'
+
+                    $parameterFilePath = Join-Path '$(Build.Repository.LocalPath)' '$(rgFolderPath)/Parameters/keyvault.parameters.json'
+                    $functionInput = @{
+                      resourcegroupName = '$(resourcegroupname)'
+                      modulePackagePath = Join-Path '$(downloadDirectory)' '$(keyVaultModuleName)'
+                      parameterFilePath = $parameterFilePath
+                    }
+
+                    Write-Verbose "Invoke task with" -Verbose
+                    $functionInput.Keys | ForEach-Object { Write-Verbose ("PARAMETER: `t'{0}' with value '{1}'" -f $_, $functionInput[$_]) -Verbose }
+
+                    Invoke-GeneralDeployment @functionInput -Verbose
+                  errorActionPreference: stop
+                  azurePowerShellVersion: LatestVersion
+                enabled: true
+              - task: AzurePowerShell@4
+                displayName: "Trigger module [$(keyVaultModuleName)] post-deployment"
+                name: PostDeploy_KeyVault_Task
+                inputs:
+                  azureSubscription: $(serviceConnection)
+                  ScriptType: InlineScript
+                  inline: |
+                    Write-Verbose "Load function" -Verbose
+                    . '$(Build.Repository.LocalPath)/$(orchestrationFunctionsPath)/GeneralDeployment/Invoke-KeyVaultPostDeployment.ps1'
+
+                    $functionInput = @{
+                      orchestrationFunctionsPath = Join-Path '$(Build.Repository.LocalPath)' '$(orchestrationFunctionsPath)'
+                      VaultName                  = '$(keyVaultName)'
+                      domainJoin_userName        = '$(domainJoinUserName)'
+                      domainJoin_pwd             = ConvertTo-SecureString '$(WVDJoinDomainUserPwd)' -AsPlainText -Force
+                    }
+
+                    if(-not ([string]::IsNullOrEmpty('$(localAdminPassword)'))) {
+                      $functionInput += @{
+                        localAdminPassword = ConvertTo-SecureString "$(localAdminPassword)" -AsPlainText -Force
+                      }
+                    }
+
+                    Write-Verbose "Invoke task with" -Verbose
+                    $functionInput.Keys | ForEach-Object { Write-Verbose ("PARAMETER: `t'{0}' with value '{1}'" -f $_, $functionInput[$_]) -Verbose }
+
+                    Invoke-KeyVaultPostDeployment @functionInput -Verbose
+                  errorActionPreference: stop
+                  azurePowerShellVersion: LatestVersion
+                enabled: true
+
+  ## Log Analytics Workspace
+  - deployment: Deploy_WVDLogAnalyticsWorkspace
+    dependsOn:
+    - ${{ if eq(variables['enableJobDeployResourceGroup'], true) }}:
+      - Deploy_MgmtResourceGroup
+    environment: Production
+    condition: |
+      and (
+        not(canceled()),
+        eq(variables['enableJobDeployLogAnalyticsWorkspace'], true),
+        in(dependencies.Deploy_MgmtResourceGroup.result, '', 'Succeeded', 'Skipped')
+      )
+    timeoutInMinutes: 120
+    pool:
+      ${{ if ne(variables.vmImage, '') }}:
+          vmImage: $(vmImage)
+      ${{ if ne(variables.poolName, '') }}:
+          name: $(poolName)
+    strategy:
+        runOnce:
+          deploy:
+            steps:
+              - checkout: self
+              - template: ../.templates/pipeline.steps.artifact.yml
+                parameters:
+                  moduleName: '$(logAnalyticsModuleName)'
+                  moduleVersion: '$(logAnalyticsModuleVersion)'
+              - task: AzurePowerShell@4
+                displayName: 'Deploy module [$(logAnalyticsModuleName)] version [$(logAnalyticsModuleVersion)] in [$(resourcegroupname)] via [$(serviceConnection)]'
+                name: Deploy_LogAnalyticsWorkspace_Task
+                inputs:
+                  azureSubscription: $(serviceConnection)
+                  ScriptType: InlineScript
+                  inline: |
+                    Write-Verbose "Load function" -Verbose
+                    . '$(Build.Repository.LocalPath)/$(orchestrationFunctionsPath)/GeneralDeployment/Invoke-GeneralDeployment.ps1'
+
+                    $parameterFilePath = Join-Path '$(Build.Repository.LocalPath)' '$(rgFolderPath)/Parameters/loganalyticsworkspace.parameters.json'
+                    $functionInput = @{
+                      resourcegroupName = '$(resourcegroupname)'
+                      modulePackagePath = Join-Path '$(downloadDirectory)' '$(logAnalyticsModuleName)'
+                      parameterFilePath = $parameterFilePath
+                    }
+
+                    Write-Verbose "Invoke task with" -Verbose
+                    $functionInput.Keys | ForEach-Object { Write-Verbose ("PARAMETER: `t'{0}' with value '{1}'" -f $_, $functionInput[$_]) -Verbose }
+
+                    Invoke-GeneralDeployment @functionInput -Verbose
+                  errorActionPreference: stop
+                  azurePowerShellVersion: LatestVersion
+                enabled: true
+
+  ## Storage Account
+  - deployment: Deploy_WVDAssetsStorageAccount
+    dependsOn:
+    - ${{ if eq(variables['enableJobDeployResourceGroup'], true) }}:
+      - Deploy_MgmtResourceGroup
+    environment: Production
+    condition: |
+      and (
+        not(canceled()),
+        eq(variables['enableJobDeployAssetsStorageAccount'], true),
+        in(dependencies.Deploy_MgmtResourceGroup.result, '', 'Succeeded', 'Skipped')
+      )
+    timeoutInMinutes: 120
+    pool:
+      ${{ if ne(variables.vmImage, '') }}:
+          vmImage: $(vmImage)
+      ${{ if ne(variables.poolName, '') }}:
+          name: $(poolName)
+    strategy:
+        runOnce:
+          deploy:
+            steps:
+              - checkout: self
+              - template: ../.templates/pipeline.steps.artifact.yml
+                parameters:
+                  moduleName: '$(storageAccountModuleName)'
+                  moduleVersion: '$(storageAccountModuleVersion)'
+              - task: AzurePowerShell@4
+                displayName: 'Deploy module [$(storageAccountModuleName)] version [$(storageAccountModuleVersion)] in [$(resourcegroupname)] via [$(serviceConnection)]'
+                name: Deploy_StorageAccounts_Task
+                inputs:
+                  azureSubscription: $(serviceConnection)
+                  ScriptType: InlineScript
+                  inline: |
+                    Write-Verbose "Load function" -Verbose
+                    . '$(Build.Repository.LocalPath)/$(orchestrationFunctionsPath)/GeneralDeployment/Invoke-GeneralDeployment.ps1'
+
+                    $parameterFilePath = Join-Path '$(Build.Repository.LocalPath)' '$(rgFolderPath)/Parameters/storageaccount.parameters.json'
+                    $functionInput = @{
+                      resourcegroupName = '$(resourcegroupname)'
+                      modulePackagePath = Join-Path '$(downloadDirectory)' '$(storageAccountModuleName)'
+                      parameterFilePath = $parameterFilePath
+                    }
+
+                    Write-Verbose "Invoke task with" -Verbose
+                    $functionInput.Keys | ForEach-Object { Write-Verbose ("PARAMETER: `t'{0}' with value '{1}'" -f $_, $functionInput[$_]) -Verbose }
+
+                    Invoke-GeneralDeployment @functionInput -Verbose
+                  errorActionPreference: stop
+                  azurePowerShellVersion: LatestVersion
+                enabled: true
+              - task: AzurePowerShell@4
+                displayName: "Trigger module [$(storageAccountModuleName)] post-deployment"
+                name: PostDeploy_StorageAccounts_Task
+                inputs:
+                  azureSubscription: $(serviceConnection)
+                  ScriptType: InlineScript
+                  inline: | 
+                    Write-Verbose "Load function" -Verbose
+                    . '$(Build.Repository.LocalPath)/$(orchestrationFunctionsPath)/GeneralDeployment/Invoke-StorageAccountPostDeployment.ps1'
+
+                    $functionInput = @{
+                      orchestrationFunctionsPath = Join-Path '$(Build.Repository.LocalPath)' '$(orchestrationFunctionsPath)'
+                      wvdUploadsPath             = Join-Path '$(Build.Repository.LocalPath)' '$(wvdUploadsPath)'          
+                      storageAccountName         = "$(wvdAssetsStorageAccount)"
+                    }
+
+                    Write-Verbose "Invoke task with" -Verbose
+                    $functionInput.Keys | ForEach-Object { Write-Verbose ("PARAMETER: `t'{0}' with value '{1}'" -f $_, $functionInput[$_]) -Verbose }
+
+                    Invoke-StorageAccountPostDeployment @functionInput -Verbose
+                  errorActionPreference: stop
+                  azurePowerShellVersion: LatestVersion
+                enabled: true
+
+  ## Scaling Automation Account
+  - deployment: Deploy_WVDAutomationAccounts
+    dependsOn:
+    - ${{ if eq(variables['enableJobDeployResourceGroup'], true) }}:
+      - Deploy_MgmtResourceGroup
+    - ${{ if eq(variables['enableJobDeployWVDKeyVault'], true) }}:
+      - Deploy_WVDKeyVault
+    - ${{ if eq(variables['enableJobDeployAssetsStorageAccount'], true) }}:
+      - Deploy_WVDAssetsStorageAccount
+    environment: Production
+    condition: |
+      and (
+        not(canceled()),
+        eq(variables['enableJobDeployAutomationAccount'], true),
+        in(dependencies.Deploy_MgmtResourceGroup.result, '', 'Succeeded', 'Skipped'),
+        in(dependencies.Deploy_WVDKeyVault.result, '', 'Succeeded', 'Skipped'),
+        in(dependencies.Deploy_WVDAssetsStorageAccount.result, '', 'Succeeded', 'Skipped')
+      )
+    timeoutInMinutes: 120
+    pool:
+      vmImage: 'windows-latest'
+    strategy:
+        runOnce:
+          deploy:
+            steps:
+              - checkout: self
+              - template: ../.templates/pipeline.steps.artifact.yml
+                parameters:
+                  moduleName: '$(automationAccountModuleName)'
+                  moduleVersion: '$(automationAccountModuleVersion)'
+              - task: AzurePowerShell@4
+                displayName: 'Deploy module [$(automationAccountModuleName)] version [$(automationAccountModuleVersion)] in [$(resourcegroupname)] via [$(serviceConnection)]'
+                name: Deploy_AutomationAccounts_Task
+                inputs:
+                  azureSubscription: $(serviceConnection)
+                  ScriptType: InlineScript
+                  inline: |
+                    Write-Verbose "Load function" -Verbose
+                    . '$(Build.Repository.LocalPath)/$(orchestrationFunctionsPath)/GeneralDeployment/Invoke-GeneralDeployment.ps1'
+
+                    $parameterFilePath = Join-Path '$(Build.Repository.LocalPath)' '$(rgFolderPath)/Parameters/automationaccounts.parameters.json'
+                    $functionInput = @{
+                      resourcegroupName = '$(resourcegroupname)'
+                      modulePackagePath = Join-Path '$(downloadDirectory)' '$(automationAccountModuleName)'
+                      parameterFilePath = $parameterFilePath
+                    }
+
+                    Write-Verbose "Invoke task with" -Verbose
+                    $functionInput.Keys | ForEach-Object { Write-Verbose ("PARAMETER: `t'{0}' with value '{1}'" -f $_, $functionInput[$_]) -Verbose }
+
+                    Invoke-GeneralDeployment @functionInput -Verbose
+                  errorActionPreference: stop
+                  azurePowerShellVersion: LatestVersion
+                  pwsh: true
+                enabled: true
+              - task: AzurePowerShell@4
+                displayName: "Trigger module [$(automationAccountModuleName)] post-deployment"
+                name: PostDeploy_AutomationAccounts_Task
+                inputs:
+                  azureSubscription: $(serviceConnection)
+                  ScriptType: InlineScript
+                  inline: |
+                    Write-Verbose "Load function" -Verbose
+                    . '$(Build.Repository.LocalPath)/$(orchestrationFunctionsPath)/GeneralDeployment/Invoke-AutomationAccountPostDeployment.ps1'
+
+                    $functionInput = @{
+                      orchestrationFunctionsPath         = Join-Path '$(Build.Repository.LocalPath)' '$(orchestrationFunctionsPath)'  
+                      AutomationAccountName              = '$(AutomationAccountName)'
+                      AutomationAccountRGName            = '$(resourcegroupname)'
+                      ScalingRunbookName                 = '$(ScalingRunbookName)'
+                      WebhookName                        = '$(ScalingWebhookName)'
+                      RunAsConnectionSPName              = '$(RunAsConnectionSPName)'
+                      KeyVaultName                       = '$(keyVaultName)'
+                      RunAsSelfSignedCertSecretName      = '$(RunAsSelfSignedCertSecretName)'
+                      AutoAccountRunAsCertExpiryInMonths = '$(AutoAccountRunAsCertExpiryInMonths)'
+                      tempPath                           = '$(Agent.TempDirectory)' 
+                      LAWorkspaceName                    = '$(LAWorkspaceName)'
+                    }
+
+                    Write-Verbose "Invoke task with" -Verbose
+                    $functionInput.Keys | ForEach-Object { Write-Verbose ("PARAMETER: `t'{0}' with value '{1}'" -f $_, $functionInput[$_]) -Verbose }
+
+                    Invoke-AutomationAccountPostDeployment @functionInput -Verbose
+                  errorActionPreference: stop
+                  azurePowerShellVersion: LatestVersion
+                  pwsh: true
+                enabled: true
+
+  ## Recovery Services Vault
+  - deployment: Deploy_RecoveryServicesVault
+    dependsOn:
+    - ${{ if eq(variables['enableJobDeployResourceGroup'], true) }}:
+      - Deploy_MgmtResourceGroup
+    environment: Production
+    condition: |
+      and (
+        not(canceled()),
+        eq(variables['enableJobDeployRSV'], true),
+        in(dependencies.Deploy_MgmtResourceGroup.result, '', 'Succeeded', 'Skipped')
+      )
+    timeoutInMinutes: 120
+    pool:
+      ${{ if ne(variables.vmImage, '') }}:
+          vmImage: $(vmImage)
+      ${{ if ne(variables.poolName, '') }}:
+          name: $(poolName)
+    strategy:
+        runOnce:
+          deploy:
+            steps:
+              - checkout: self
+              - template: ../.templates/pipeline.steps.artifact.yml
+                parameters:
+                  moduleName: '$(rsvModuleName)'
+                  moduleVersion: '$(rsvModuleVersion)'
+              - task: AzurePowerShell@4
+                displayName: 'Deploy module [$(rsvModuleName)] version [$(rsvModuleVersion)] in [$(resourcegroupname)] via [$(serviceConnection)]'
+                name: Deploy_RecoveryServicesVaults_Task
+                inputs:
+                  azureSubscription: $(serviceConnection)
+                  ScriptType: InlineScript
+                  inline: |
+                    Write-Verbose "Load function" -Verbose
+                    . '$(Build.Repository.LocalPath)/$(orchestrationFunctionsPath)/GeneralDeployment/Invoke-GeneralDeployment.ps1'
+
+                    $parameterFilePath = Join-Path '$(Build.Repository.LocalPath)' '$(rgFolderPath)/Parameters/rsv.parameters.json'
+                    $functionInput = @{
+                      resourcegroupName = '$(resourcegroupname)'
+                      modulePackagePath = Join-Path '$(downloadDirectory)' '$(rsvModuleName)'
+                      parameterFilePath = $parameterFilePath
+                    }
+
+                    Write-Verbose "Invoke task with" -Verbose
+                    $functionInput.Keys | ForEach-Object { Write-Verbose ("PARAMETER: `t'{0}' with value '{1}'" -f $_, $functionInput[$_]) -Verbose }
+
+                    Invoke-GeneralDeployment @functionInput -Verbose
+                  errorActionPreference: stop
+                  azurePowerShellVersion: LatestVersion
+                enabled: true
+              - task: AzurePowerShell@4
+                displayName: "Trigger module [$(rsvModuleName)] post-deployment"
+                name: PostDeploy_RecoveryServicesVaults_Task
+                inputs:
+                  azureSubscription: $(serviceConnection)
+                  ScriptType: InlineScript
+                  inline: |
+                    Write-Verbose "Load function" -Verbose
+                    . '$(Build.Repository.LocalPath)/$(orchestrationFunctionsPath)/GeneralDeployment/Invoke-RsvPostDeployment.ps1'
+                    $filesharePolicyMapPath = Join-Path '$(Build.Repository.LocalPath)' '$(rgFolderPath)/rsv.backupmap.json' 
+
+                    if(-not (Test-Path $filesharePolicyMapPath)) {
+                      throw "Unable to locate file share backup configuration in path [$filesharePolicyMapPath]"
+                    }
+                    $fileSharePolicyMaps = Get-Content -Path $filesharePolicyMapPath -Raw | ConvertFrom-Json -AsHashtable
+
+                    $functionInput = @{
+                      orchestrationFunctionsPath         = Join-Path '$(Build.Repository.LocalPath)' '$(orchestrationFunctionsPath)'  
+                      recoveryServicesVaultName          = "$(profilesBackupVault)"
+                      RecoveryServicesVaultResourceGroup = "$(resourcegroupname)"
+                      fileSharePolicyMaps                = $fileSharePolicyMaps.fileSharePolicyMaps
+                    }
+
+                    Write-Verbose "Invoke task with" -Verbose
+                    $functionInput.Keys | ForEach-Object { Write-Verbose ("PARAMETER: `t'{0}' with value '{1}'" -f $_, $functionInput[$_]) -Verbose }
+
+                    Invoke-RSVPostDeployment @functionInput -Verbose
+                  errorActionPreference: stop
+                  azurePowerShellVersion: LatestVersion
+                enabled: true

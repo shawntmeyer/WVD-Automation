@@ -1,0 +1,214 @@
+name: $(pipelineName)
+
+variables:
+- template: variables.yml
+
+trigger: none
+
+stages:
+- stage: Production
+  jobs:
+  ## Resource Group
+  - deployment: Deploy_ProfilesResourceGroup
+    dependsOn: ''
+    environment: Production
+    condition: | 
+      and(
+        not(canceled()), 
+        eq(variables['enableJobDeployResourceGroup'], true)
+      )
+    timeoutInMinutes: 120
+    pool:
+      ${{ if ne(variables.vmImage, '') }}:
+          vmImage: $(vmImage)
+      ${{ if ne(variables.poolName, '') }}:
+          name: $(poolName)
+    strategy:
+        runOnce:
+          deploy:
+            steps:
+              - checkout: self
+              - template: ../.templates/pipeline.steps.artifact.yml
+                parameters:
+                  moduleName: '$(resourceGroupModuleName)'
+                  moduleVersion: '$(resourceGroupModuleVersion)'
+              - task: AzurePowerShell@4
+                displayName: 'Deploy module [$(resourceGroupModuleName)] version [$(resourceGroupModuleVersion)] in [$(resourcegroupname)] via [$(serviceConnection)]'
+                name: Deploy_ResourceGroup_Task_01
+                inputs:
+                  azureSubscription: $(serviceConnection)
+                  ScriptType: InlineScript
+                  inline: |
+                    Write-Verbose "Load function" -Verbose
+                    . '$(Build.SourcesDirectory)/$(orchestrationFunctionsPath)/GeneralDeployment/Invoke-GeneralDeployment.ps1'
+
+                    $parameterFilePath = Join-Path '$(Build.SourcesDirectory)' '$(rgFolderPath)/Parameters/resourcegroup.parameters.json'
+                    $functionInput = @{
+                      location          = '$(location)'
+                      modulePackagePath = Join-Path '$(Build.SourcesDirectory)/$(packagePath)' '$(resourceGroupModuleName)'
+                      parameterFilePath = $parameterFilePath
+                    }
+
+                    Write-Verbose "Invoke task with $functionInput" -Verbose
+                    $functionInput.Keys | ForEach-Object { Write-Verbose ("PARAMETER: `t'{0}' with value '{1}'" -f $_, $functionInput[$_]) -Verbose }
+
+                    Invoke-GeneralDeployment @functionInput -Verbose
+                  errorActionPreference: stop
+                  azurePowerShellVersion: LatestVersion
+                enabled: true
+
+  ## Storage Account 1
+  - deployment: Deploy_WVDCADProfilesStorageAccount
+    dependsOn:
+    - ${{ if eq(variables['enableJobDeployResourceGroup'], true) }}:
+      - Deploy_ProfilesResourceGroup
+    environment: Production
+    condition: |
+      and (
+        not(canceled()),
+        eq(variables['enableJobDeployCADProfilesStorageAccount'], true),
+        in(dependencies.Deploy_ProfilesResourceGroup.result, '', 'Succeeded', 'Skipped')
+      )
+    timeoutInMinutes: 120
+    pool:
+      ${{ if ne(variables.vmImage, '') }}:
+          vmImage: $(vmImage)
+      ${{ if ne(variables.poolName, '') }}:
+          name: $(poolName)
+    strategy:
+        runOnce:
+          deploy:
+            steps:
+              - checkout: self
+              - template: ../.templates/pipeline.steps.artifact.yml
+                parameters:
+                  moduleName: '$(storageAccountModuleName)'
+                  moduleVersion: '$(storageaccountModuleVersion)'
+              - task: AzurePowerShell@4
+                displayName: 'Deploy module [$(storageAccountModuleName)] version [$(storageaccountModuleVersion)] in [$(resourcegroupname)] via [$(serviceConnection)]'
+                name: Deploy_StorageAccount_Task
+                inputs:
+                  azureSubscription: $(serviceConnection)
+                  ScriptType: InlineScript
+                  inline: |
+                    Write-Verbose "Load function" -Verbose
+                    . '$(Build.SourcesDirectory)/$(orchestrationFunctionsPath)/GeneralDeployment/Invoke-GeneralDeployment.ps1'
+
+                    $parameterFilePath = Join-Path '$(Build.SourcesDirectory)' '$(rgFolderPath)/Parameters/CADProfiles-storageaccount.parameters.json'
+                    $functionInput = @{
+                      resourcegroupName = '$(resourcegroupname)'
+                      modulePackagePath = Join-Path '$(Build.SourcesDirectory)/$(packagePath)' '$(storageAccountModuleName)'
+                      parameterFilePath = $parameterFilePath
+                    }
+                    
+                    Write-Verbose "Invoke task with $functionInput" -Verbose
+                    $functionInput.Keys | ForEach-Object { Write-Verbose ("PARAMETER: `t'{0}' with value '{1}'" -f $_, $functionInput[$_]) -Verbose }
+
+                    Invoke-GeneralDeployment @functionInput -Verbose
+                  errorActionPreference: stop
+                  azurePowerShellVersion: LatestVersion
+                enabled: true
+
+## Storage Account 2
+  - deployment: Deploy_WVDAdminProfilesStorageAccount
+    dependsOn:
+    - ${{ if eq(variables['enableJobDeployResourceGroup'], true) }}:
+      - Deploy_ProfilesResourceGroup
+    environment: Production
+    condition: |
+      and (
+        not(canceled()),
+        eq(variables['enableJobDeployAdminProfilesStorageAccount'], true),
+        in(dependencies.Deploy_ProfilesResourceGroup.result, '', 'Succeeded', 'Skipped')
+      )
+    timeoutInMinutes: 120
+    pool:
+      ${{ if ne(variables.vmImage, '') }}:
+          vmImage: $(vmImage)
+      ${{ if ne(variables.poolName, '') }}:
+          name: $(poolName)
+    strategy:
+        runOnce:
+          deploy:
+            steps:
+              - checkout: self
+              - template: ../.templates/pipeline.steps.artifact.yml
+                parameters:
+                  moduleName: '$(storageAccountModuleName)'
+                  moduleVersion: '$(storageaccountModuleVersion)'
+              - task: AzurePowerShell@4
+                displayName: 'Deploy module [$(storageAccountModuleName)] version [$(storageaccountModuleVersion)] in [$(resourcegroupname)] via [$(serviceConnection)]'
+                name: Deploy_StorageAccount_Task
+                inputs:
+                  azureSubscription: $(serviceConnection)
+                  ScriptType: InlineScript
+                  inline: |
+                    Write-Verbose "Load function" -Verbose
+                    . '$(Build.SourcesDirectory)/$(orchestrationFunctionsPath)/GeneralDeployment/Invoke-GeneralDeployment.ps1'
+
+                    $parameterFilePath = Join-Path '$(Build.SourcesDirectory)' '$(rgFolderPath)/Parameters/AdminProfiles-storageaccount.parameters.json'
+                    $functionInput = @{
+                      resourcegroupName = '$(resourcegroupname)'
+                      modulePackagePath = Join-Path '$(Build.SourcesDirectory)/$(packagePath)' '$(storageAccountModuleName)'
+                      parameterFilePath = $parameterFilePath
+                    }
+                    
+                    Write-Verbose "Invoke task with $functionInput" -Verbose
+                    $functionInput.Keys | ForEach-Object { Write-Verbose ("PARAMETER: `t'{0}' with value '{1}'" -f $_, $functionInput[$_]) -Verbose }
+
+                    Invoke-GeneralDeployment @functionInput -Verbose
+                  errorActionPreference: stop
+                  azurePowerShellVersion: LatestVersion
+                enabled: true
+
+                ## Storage Account 2
+  - deployment: Deploy_WVDDevProfilesStorageAccount
+    dependsOn:
+    - ${{ if eq(variables['enableJobDeployResourceGroup'], true) }}:
+      - Deploy_ProfilesResourceGroup
+    environment: Production
+    condition: |
+      and (
+        not(canceled()),
+        eq(variables['enableJobDeployDevProfilesStorageAccount'], true),
+        in(dependencies.Deploy_ProfilesResourceGroup.result, '', 'Succeeded', 'Skipped')
+      )
+    timeoutInMinutes: 120
+    pool:
+      ${{ if ne(variables.vmImage, '') }}:
+          vmImage: $(vmImage)
+      ${{ if ne(variables.poolName, '') }}:
+          name: $(poolName)
+    strategy:
+        runOnce:
+          deploy:
+            steps:
+              - checkout: self
+              - template: ../.templates/pipeline.steps.artifact.yml
+                parameters:
+                  moduleName: '$(storageAccountModuleName)'
+                  moduleVersion: '$(storageaccountModuleVersion)'
+              - task: AzurePowerShell@4
+                displayName: 'Deploy module [$(storageAccountModuleName)] version [$(storageaccountModuleVersion)] in [$(resourcegroupname)] via [$(serviceConnection)]'
+                name: Deploy_StorageAccount_Task
+                inputs:
+                  azureSubscription: $(serviceConnection)
+                  ScriptType: InlineScript
+                  inline: |
+                    Write-Verbose "Load function" -Verbose
+                    . '$(Build.SourcesDirectory)/$(orchestrationFunctionsPath)/GeneralDeployment/Invoke-GeneralDeployment.ps1'
+
+                    $parameterFilePath = Join-Path '$(Build.SourcesDirectory)' '$(rgFolderPath)/Parameters/DevProfiles-storageaccount.parameters.json'
+                    $functionInput = @{
+                      resourcegroupName = '$(resourcegroupname)'
+                      modulePackagePath = Join-Path '$(Build.SourcesDirectory)/$(packagePath)' '$(storageAccountModuleName)'
+                      parameterFilePath = $parameterFilePath
+                    }
+                    
+                    Write-Verbose "Invoke task with $functionInput" -Verbose
+                    $functionInput.Keys | ForEach-Object { Write-Verbose ("PARAMETER: `t'{0}' with value '{1}'" -f $_, $functionInput[$_]) -Verbose }
+
+                    Invoke-GeneralDeployment @functionInput -Verbose
+                  errorActionPreference: stop
+                  azurePowerShellVersion: LatestVersion
+                enabled: true

@@ -1,0 +1,95 @@
+#######################################################################
+##                                NOTE                               ##
+## ------------------------------------------------------------------##
+## - These variables are used to configure the pipeline and provide  ##
+##   variables to pipeline scripts                                   ##
+## - Parameters used for resource deployments are located in the     ##
+##   parameter files in the '.\Parameters' folder                    ##
+#######################################################################
+
+variables:
+
+#############
+## GENERAL ##
+#############
+#region general
+  rgFolderPath: '$(orchestrationPath)/bsd-imaging-rg'
+  location: EastUS
+  orchestrationPath: 'Environments'
+  orchestrationFunctionsPath: 'OrchestrationSources/SharedDeploymentFunctions'
+  wvdUploadsPath: '$(rgFolderPath)/Uploads'
+  vmImage: 'ubuntu-latest' # "ubuntu-latest"
+  poolName: ''
+  serviceConnection: 'Stardust SP Connection'
+  artifactFeedPath: '$(System.Teamproject)/Components'
+  packagePath: ModulePackages
+#endregion
+
+#######################
+## PIPELINE CONTROLS ##
+#######################
+#region pipeline controls
+
+# Pipeline Name
+# -------------
+  pipelineName: 'BSD Imaging Deployment'
+
+# Deployed Module Specs
+# ---------------------
+  resourceGroupModuleName: ResourceGroup
+  resourceGroupModuleVersion: '*'
+
+  msiModuleName: UserAssignedIdentities
+  msiModuleVersion: '*'
+
+  rbacModuleName: RoleAssignments
+  rbacModuleVersion: '*'
+
+  storageAccountModuleName: StorageAccounts
+  storageAccountModuleVersion: '*'  
+
+  sharedImageGalleryModuleName: SharedImageGallery
+  sharedImageGalleryModuleVersion: '*'
+
+  sharedImageDefinitionModuleName: SharedImageDefinition
+  sharedImageDefinitionModuleVersion: '*'
+
+  imageTemplateModuleName: ImageTemplates
+  imageTemplateModuleVersion: '*'
+
+# Jobs
+# ----
+  enableJobDeployResourceGroup: false # To enable/disable job
+  enableJobDeployImageAssetsStorageAccount: true # To enable/disable
+  enableJobDeployUserAssignedIdentity: false # To enable/disable job
+  enableJobUserAssignedIdentityRoleAssignments: false # To enable/disable 
+  enableJobDeploySharedImageGallery: false # To enable/disable job
+  enableJobDeploySharedImageDefinition: true # To enable/disable job
+  enableJobStartNewAdminImageBuild: false
+  enableJobStartNewCADImageBuild: false
+  enableJobStartNewDevImageBuild: true
+
+#endregion
+
+######################
+## SCRIPT VARIABLES ##
+######################
+#region script variables
+
+# ResourceGroup related
+# ---------------------
+  resourcegroupname: 'bsd-imaging-rg'
+
+# Storage Account related
+# -----------------------
+  wvdImageAssetsStorageAccount: 'bsdimageassetsstore'
+  targetContainer: 'imagesources'
+
+# User Assigned Identity related
+#-------------------------------
+  userAssignedIdentityName: 'BSDimagingMSI'
+
+# ImageTemplate related
+# ---------------------
+  # Set to true in case the pipeline should terminate only after the image backing process finished
+  synchronouslyWaitForImageBuild: false  

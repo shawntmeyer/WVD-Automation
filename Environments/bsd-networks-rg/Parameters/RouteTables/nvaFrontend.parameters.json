@@ -1,0 +1,48 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"routeTableName": {
+			"value": "hubnet-udrfe"
+
+		},
+		"routes": {
+			"value": [
+				{
+					"name": "Drop-Local-Subnet-172-16-0-0--12",
+					"properties": {
+						"addressPrefix": "172.16.0.0/12",
+						"nextHopType": "None"
+					}
+				},
+				{
+					"name": "Drop-Local-Subnet-10-0-0-0--8",
+					"properties": {
+						"addressPrefix": "10.0.0.0/8",
+						"nextHopType": "None"
+					}
+				},
+				{
+					"name": "Drop-Local-Subnet-192-168-0-0--16",
+					"properties": {
+						"addressPrefix": "192.168.0.0/16",
+						"nextHopType": "None"
+					}
+				},
+				{
+					"name": "Local-Subnet-10-192-144-0--28-to-NVA",
+					"properties": {
+						"addressPrefix": "10.192.144.0/28",
+						"nextHopType": "VnetLocal"
+					}
+				}
+			]
+		},
+		"disableBgpRoutePropagation": {
+			"value": true
+		},
+		"tags": {
+			"value": { "Demo":"HubNetwork" }
+		}
+	}
+}
